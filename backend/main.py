@@ -1,3 +1,4 @@
+import os
 import uuid
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status, Request
@@ -85,7 +86,7 @@ class GenerateRequest(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "gemini_model": "gemini-3.6-flash"}
+    return {"status": "ok", "gemini_model": os.getenv("GEMINI_MODEL", "gemini-3.5-flash")}
 
 @app.post("/api/ingest")
 async def ingest_content(

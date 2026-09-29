@@ -9,6 +9,7 @@ from PIL import Image
 import cv2
 from google import genai
 from google.genai import types
+from gemini_service import generate_content_with_fallback
 
 def chunk_text(text: str, target_words: int = 175) -> List[Dict[str, str]]:
     """
@@ -102,22 +103,17 @@ async def extract_text_from_file(file_bytes: bytes, filename: str, gemini_client
     elif ext in ['.png', '.jpg', '.jpeg', '.webp']:
         try:
             image = Image.open(io.BytesIO(file_bytes))
-            # Pass image to Gemini vision model
-            model_name = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
-            response = gemini_client.models.generate_content(
-                model=model_name,
-                contents=[
-                    image,
-                    "Extract all visible text from this image accurately. Also provide a concise summary description of any charts, diagrams, infographics, or visual contents present."
-                ]
-            )
-            return response.text or "No text could be extracted from image."
+            contents = [
+                image,
+                "Extract all visible text from this image accurately. Also provide a concise summary description of any charts, diagrams, infographics, or visual contents present."
+            ]
+            response_text = generate_content_with_fallback(gemini_client, contents, config=None)
+            return response_text or "No text could be extracted from image."
         except Exception as e:
             raise ValueError(f"Failed to process image with Gemini Vision: {str(e)}")
             
     elif ext in ['.mp4', '.avi', '.mov', '.mkv', '.webm']:
         try:
-            # Extract sample frames from video using OpenCV
             with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
                 tmp.write(file_bytes)
                 tmp_path = tmp.name
@@ -128,7 +124,6 @@ async def extract_text_from_file(file_bytes: bytes, filename: str, gemini_client
             
             extracted_images = []
             if total_frames > 0:
-                # Take up to 5 evenly spaced frames
                 num_samples = min(5, total_frames)
                 indices = [int(i * total_frames / num_samples) for i in range(num_samples)]
                 
@@ -136,7 +131,6 @@ async def extract_text_from_file(file_bytes: bytes, filename: str, gemini_client
                     cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
                     ret, frame = cap.read()
                     if ret:
-                        # Convert BGR to RGB
                         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         pil_img = Image.fromarray(rgb_frame)
                         extracted_images.append(pil_img)
@@ -146,16 +140,11 @@ async def extract_text_from_file(file_bytes: bytes, filename: str, gemini_client
             if not extracted_images:
                 return "Video uploaded, but could not extract frames."
                 
-            model_name = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
             contents = extracted_images + [
                 "The following images are representative keyframes extracted from a video. Extract all visible text, slides, subtitles, and describe the sequential video scenes and main topic discussed."
             ]
-            
-            response = gemini_client.models.generate_content(
-                model=model_name,
-                contents=contents
-            )
-            return response.text or "No content described from video frames."
+            response_text = generate_content_with_fallback(gemini_client, contents, config=None)
+            return response_text or "No content described from video frames."
         except Exception as e:
             raise ValueError(f"Failed to process video file '{filename}': {str(e)}")
     else:

@@ -10,11 +10,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# gemini-3.6-flash is a stable GA model (confirmed available on this account).
-# Preview models (gemini-3-flash-preview) see higher 503 demand spikes, so they
-# are kept only as last-resort fallbacks.
-PRIMARY_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
-FALLBACK_MODELS = [PRIMARY_MODEL, "gemini-3.8-flash", "gemini-3-flash-preview"]
+PRIMARY_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+FALLBACK_MODELS = [PRIMARY_MODEL, "gemma-4-26b-a4b-it", "gemini-3-flash-preview", "gemini-3.5-flash"]
 
 def get_gemini_client() -> genai.Client:
     api_key = os.getenv("GEMINI_API_KEY")
@@ -58,16 +55,7 @@ PROMPT_TEMPLATES = {
 def _extract_json(text: str) -> str:
     """
     Robustly extracts the first complete JSON object from a Gemini response.
-    Steps:
-      1. Strip markdown code fences (```json / ```) if present.
-      2. Find the first '{' in the text.
-      3. Walk forward character-by-character, tracking brace depth and
-         whether we are inside a string literal (so braces in values are
-         not counted), until the opening brace is balanced.
-      4. Return only that substring — ignoring any trailing prose or
-         duplicate data that caused json.loads() to raise 'Extra data'.
     """
-    # Step 1 – strip markdown fences
     text = text.strip()
     for fence in ("```json", "```"):
         if text.startswith(fence):
@@ -77,13 +65,10 @@ def _extract_json(text: str) -> str:
         text = text[:-3]
     text = text.strip()
 
-    # Step 2 – locate opening brace
     start = text.find("{")
     if start == -1:
-        # No JSON object found; return as-is and let json.loads surface the error
         return text
 
-    # Step 3 – walk to matching closing brace
     depth = 0
     in_string = False
     escape_next = False
@@ -104,49 +89,32 @@ def _extract_json(text: str) -> str:
         elif ch == "}":
             depth -= 1
             if depth == 0:
-                return text[start:i + 1]   # Step 4 – exact JSON substring
+                return text[start:i + 1]
 
-    # Unbalanced braces — return from start and let json.loads report the issue
     return text[start:]
 
 def generate_content_with_fallback(client: genai.Client, contents: Any, config: types.GenerateContentConfig) -> str:
     """
-    Tries generating content with PRIMARY_MODEL and FALLBACK_MODELS.
-    Retries up to 2 times per model with a 3.5s delay specifically for 503 (UNAVAILABLE/high demand) errors.
+    Instantly tries FALLBACK_MODELS with zero artificial sleep delays between attempts.
     """
     last_exception = None
 
     for model_name in FALLBACK_MODELS:
-        for attempt in range(1, 3):
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=contents,
-                    config=config
-                )
-                if response and response.text:
-                    return response.text
-            except Exception as e:
-                last_exception = e
-                err_str = str(e)
-                is_503 = any(kw in err_str for kw in ["503", "UNAVAILABLE", "high demand", "overloaded", "Service Unavailable"])
-                is_429 = any(kw in err_str for kw in ["429", "RESOURCE_EXHAUSTED", "Quota"])
-                
-                if is_503:
-                    # Jittered backoff: 2-4 s random so concurrent retries
-                    # don't all slam the server at the exact same moment.
-                    time.sleep(random.uniform(2.0, 4.0))
-                    continue
-                elif is_429:
-                    # Jittered backoff: 1.5-3 s random for quota errors.
-                    time.sleep(random.uniform(1.5, 3.0))
-                    continue
-                else:
-                    break
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=config
+            )
+            if response and response.text:
+                return response.text
+        except Exception as e:
+            last_exception = e
+            continue
 
     if last_exception:
         err_str = str(last_exception)
-        if any(kw in err_str for kw in ["503", "429", "UNAVAILABLE", "high demand", "overloaded", "RESOURCE_EXHAUSTED", "Quota", "Service Unavailable"]):
+        if any(kw in err_str for kw in ["503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "Quota", "high demand", "overloaded"]):
             raise ValueError("AI service is temporarily busy, please try again in a moment.")
         raise ValueError(f"Gemini API error: {err_str}")
 
@@ -263,7 +231,7 @@ FULL SOURCE CHUNKS REFERENCE:
 CUSTOM GENERATION PARAMETERS:
 - Tone: {tone}
 - Target Audience: {audience}
-- Output Language: Write entire output in {language} (IMPORTANT: translate and compose directly in {language})
+- Output Language: Write ALL human-readable content values in the requested language: {language}. Keep all JSON keys, field names and chunk IDs (c1, c2...) exactly in English. Keep numbers, acronyms, product names and proper nouns exactly as they appear in the source. The anti-fabrication and citation-integrity rules still apply in every language: only use facts present in the source chunks.
 - Detail Level: {detail_level}
 - Objective: {objective}
 - Content Style: {style}
@@ -312,7 +280,7 @@ async def generate_all_outputs_parallel(
     """
     async def _staggered(index: int, o_type: str):
         if index > 0:
-            await asyncio.sleep(index * 0.3)   # 300 ms stagger per slot
+            await asyncio.sleep(index * 0.1)   # 100 ms micro-stagger for ultra-fast parallel execution
         return await generate_single_output_service(o_type, analysis, parameters, chunks)
 
     tasks = [
