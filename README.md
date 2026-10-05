@@ -183,6 +183,7 @@ Then open **http://localhost:3000** in your browser.
 | Shaikh Musib Riyaz | Chemical Engineering (Green Technology & Sustainable Engineering) |
 | Momin Anishussain Kasimali | CSE (AI/ML) |
 | Shaikh Tehjib Rais | CSE (AI/ML) |
+| Vora Adil Shakil | CSE (AI/ML) |
 
 ---
 
