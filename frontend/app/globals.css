@@ -143,3 +143,141 @@
   animation: stepPulse 1.5s ease-in-out infinite;
 }
 
+/* Motion utilities shared by interactive cards and data-driven reveals */
+.spotlight-card {
+  isolation: isolate;
+  --mx: 50%;
+  --my: 50%;
+}
+
+.spotlight-card::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    280px circle at var(--mx) var(--my),
+    rgba(99, 102, 241, 0.09),
+    transparent 68%
+  );
+  transition: opacity 180ms ease;
+}
+
+.spotlight-card:hover::after {
+  opacity: 1;
+}
+
+.tilt-card {
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transform-style: preserve-3d;
+  box-shadow: var(--shadow-x, 0px) var(--shadow-y, 8px) 24px -12px rgba(30, 41, 59, 0.22);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  will-change: transform;
+}
+
+.magnetic-button {
+  transform: translate3d(var(--magnetic-x, 0px), var(--magnetic-y, 0px), 0);
+  transition: transform 160ms ease;
+  will-change: transform;
+}
+
+.click-ripple {
+  animation: clickRipple 520ms ease-out forwards;
+}
+
+@keyframes clickRipple {
+  from {
+    opacity: 0.32;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.aurora-layer {
+  animation: auroraDrift 24s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+@keyframes auroraDrift {
+  from {
+    opacity: 0.65;
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(2%, 1%, 0) scale(1.04);
+  }
+}
+
+.result-reveal {
+  animation: resultReveal 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+@keyframes resultReveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.step-connector-active {
+  position: relative;
+  overflow: hidden;
+}
+
+.step-connector-active::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  transform: translateX(-100%);
+  animation: connectorGlow 1.8s ease-in-out infinite;
+}
+
+@keyframes connectorGlow {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.evidence-glow {
+  animation: evidenceGlow 1.2s ease-out both;
+}
+
+@keyframes evidenceGlow {
+  0%, 100% {
+    opacity: 0;
+  }
+  20%, 65% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spotlight-card::after,
+  .tilt-card,
+  .magnetic-button {
+    transition: none;
+    transform: none;
+    will-change: auto;
+  }
+
+  .aurora-layer,
+  .click-ripple,
+  .result-reveal,
+  .step-connector-active::after,
+  .evidence-glow {
+    animation: none;
+  }
+}
