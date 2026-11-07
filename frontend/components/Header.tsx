@@ -2,15 +2,16 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { History, Cpu, ShieldCheck } from 'lucide-react';
+import { History, Cpu, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface HeaderProps {
   onOpenHistory: () => void;
+  onLoadDemo: () => void;
   backendStatus: boolean;
   modelName: string;
 }
 
-export default function Header({ onOpenHistory, backendStatus, modelName }: HeaderProps) {
+export default function Header({ onOpenHistory, onLoadDemo, backendStatus, modelName }: HeaderProps) {
   return (
     <header className="header-aurora sticky top-0 z-40 w-full bg-white/85 backdrop-blur-xl border-b border-slate-200/80 px-4 lg:px-8 py-3.5 shadow-xs">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
@@ -53,7 +54,7 @@ export default function Header({ onOpenHistory, backendStatus, modelName }: Head
         </div>
 
         {/* Actions & Status */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 shrink-0">
           {/* Backend Status Indicator */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs shadow-xs">
             <span className="relative flex h-2.5 w-2.5">
@@ -64,6 +65,14 @@ export default function Header({ onOpenHistory, backendStatus, modelName }: Head
               {backendStatus ? 'API Connected' : 'API Offline'}
             </span>
           </div>
+
+          <button
+            onClick={onLoadDemo}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 shadow-xs text-indigo-800 hover:text-indigo-950 text-xs font-semibold transition cursor-pointer"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+            <span>Load Demo Result</span>
+          </button>
 
           {/* History Button */}
           <button

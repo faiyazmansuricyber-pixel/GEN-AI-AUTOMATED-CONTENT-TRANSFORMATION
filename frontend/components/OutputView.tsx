@@ -15,7 +15,7 @@ interface OutputViewProps {
   errors: Record<string, string>;
   selectedOutputs?: string[];
   isLoading?: boolean;
-  onChunkClick?: (chunkId: string) => void;
+  onChunkClick?: (chunkId: string, sourceElement?: HTMLElement) => void;
   submissionId?: string;
   chunks?: any[];
 }
@@ -783,7 +783,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                 {activeOutputData.claims_used?.map((cid: string) => (
                   <button
                     key={cid}
-                    onClick={() => onChunkClick?.(cid)}
+                    onClick={(event) => onChunkClick?.(cid, event.currentTarget)}
                     className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-mono font-bold border border-indigo-200 transition shadow-2xs hover:scale-105 cursor-pointer"
                     title="Click to highlight original source chunk in Audit panel"
                   >

@@ -16,7 +16,7 @@ export interface AnalysisData {
 interface AnalysisViewProps {
   analysis: AnalysisData | null;
   isLoading?: boolean;
-  onChunkClick?: (chunkId: string) => void;
+  onChunkClick?: (chunkId: string, sourceElement?: HTMLElement) => void;
 }
 
 // Categorize entities heuristically on client-side
@@ -293,7 +293,7 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
                     {item.source_chunk_ids?.map((cid) => (
                       <button
                         key={cid}
-                        onClick={() => onChunkClick?.(cid)}
+                        onClick={(event) => onChunkClick?.(cid, event.currentTarget)}
                         className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-mono font-bold border border-indigo-200 transition cursor-pointer shadow-xs hover:scale-105"
                         title={`Click to highlight source chunk ${cid} in Audit panel`}
                       >

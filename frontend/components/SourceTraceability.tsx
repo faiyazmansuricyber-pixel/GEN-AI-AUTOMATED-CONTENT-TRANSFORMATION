@@ -11,6 +11,7 @@ export interface SourceChunk {
 interface SourceTraceabilityProps {
   chunks: SourceChunk[];
   highlightedChunkId: string | null;
+  glowingChunkId?: string | null;
   onClearHighlight: () => void;
   rawText?: string;
 }
@@ -18,6 +19,7 @@ interface SourceTraceabilityProps {
 export default function SourceTraceability({
   chunks,
   highlightedChunkId,
+  glowingChunkId,
   onClearHighlight
 }: SourceTraceabilityProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,8 +125,9 @@ export default function SourceTraceability({
             return (
               <div
                 key={chunk.id}
+                data-chunk-id={chunk.id}
                 ref={(el) => { chunkRefs.current[chunk.id] = el; }}
-                className={`p-4 rounded-xl border text-xs chunk-card-transition relative ${
+                className={`${glowingChunkId === chunk.id ? 'evidence-glow ' : ''}p-4 rounded-xl border text-xs chunk-card-transition relative ${
                   isHighlighted
                     ? 'chunk-highlighted border-cyan-500 bg-cyan-50/80 text-slate-900 shadow-md ring-2 ring-cyan-200 scale-[1.01]'
                     : 'bg-slate-50/60 border-slate-200/90 text-slate-700 hover:border-slate-300 hover:bg-white shadow-2xs interactive-hover'
