@@ -982,9 +982,16 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                         isDone 
                           ? 'bg-emerald-500' 
                           : isCurrent 
-                            ? 'bg-indigo-600 step-active-pulse' 
+                            ? 'bg-indigo-600 step-active-pulse step-connector-active' 
                             : 'bg-slate-200'
-                      }`} />
+                      }`}>
+                        {isCurrent && (
+                          <>
+                            <span className="step-particle" aria-hidden="true" />
+                            <span className="step-particle step-particle-delayed" aria-hidden="true" />
+                          </>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1">
                         {isDone ? (
                           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />

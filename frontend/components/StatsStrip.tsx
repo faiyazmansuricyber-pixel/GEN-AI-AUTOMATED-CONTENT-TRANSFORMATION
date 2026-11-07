@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { Database, FileText, Layers, Cpu } from 'lucide-react';
-import { useMouseSpotlight, useTilt } from '@/lib/hooks';
+import { useCountUp, useMouseSpotlight, useTilt } from '@/lib/hooks';
 
 interface StatsStripProps {
   refreshTrigger?: number;
@@ -25,12 +25,14 @@ function StatCard({
 }) {
   const spotlightRef = useMouseSpotlight<HTMLDivElement>();
   const tiltRef = useTilt<HTMLDivElement>();
+  const { ref: countRef, value: count } = useCountUp(value);
 
   return (
     <div
       ref={(element) => {
         spotlightRef.current = element;
         tiltRef.current = element;
+        countRef.current = element;
       }}
       className={`spotlight-card tilt-card relative flex items-center gap-3 px-3.5 py-2 rounded-xl border ${cardClass}`}
     >
@@ -39,7 +41,7 @@ function StatCard({
       </div>
       <div>
         <div className="text-base lg:text-lg font-extrabold text-slate-900 leading-none">
-          {value}
+          {count}
         </div>
         <div className="text-[11px] font-semibold text-slate-500 mt-0.5 whitespace-nowrap">
           {label}

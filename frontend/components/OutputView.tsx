@@ -6,7 +6,7 @@ import MagneticButton from '@/components/MagneticButton';
 import { 
   FileCheck, FileOutput, Presentation, 
   BarChart3, Video, Copy, Check, ChevronLeft, ChevronRight, 
-  MessageSquare, Sparkles, Layers, FileText, Eye, ShieldCheck,
+  MessageSquare, Sparkles, Layers, FileText, Eye,
   Download, Archive, Loader2, AlertCircle
 } from 'lucide-react';
 
@@ -30,6 +30,7 @@ function GroundingBadge({ claimsUsed, validChunkIds }: { claimsUsed?: string[]; 
   const totalCount = claimsUsed.length;
   const scorePercent = Math.round((validCount / totalCount) * 100);
   const is100 = scorePercent === 100;
+  const circumference = 2 * Math.PI * 14;
 
   return (
     <div
@@ -40,7 +41,22 @@ function GroundingBadge({ claimsUsed, validChunkIds }: { claimsUsed?: string[]; 
       }`}
       title={`${validCount} of ${totalCount} claims verified against source chunks (${scorePercent}% grounded)`}
     >
-      <ShieldCheck className={`h-3.5 w-3.5 ${is100 ? 'text-emerald-600' : 'text-amber-600'}`} />
+      <svg className="h-8 w-8 shrink-0" viewBox="0 0 36 36" aria-hidden="true">
+        <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-200" />
+        <circle
+          cx="18"
+          cy="18"
+          r="14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - scorePercent / 100)}
+          transform="rotate(-90 18 18)"
+          className={`grounding-ring ${is100 ? 'text-emerald-500' : 'text-amber-500'}`}
+        />
+      </svg>
       <span>{validCount}/{totalCount} claims sourced</span>
     </div>
   );
@@ -284,7 +300,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
 
       {/* Render Active Output Content */}
       {activeOutputData && (
-        <div ref={outputSpotlightRef} key={activeTab} className="spotlight-card relative space-y-6 animate-fade-in-up">
+        <div ref={outputSpotlightRef} key={activeTab} className="spotlight-card relative space-y-6 tab-content-transition">
           {/* 1. LINKEDIN POST */}
           {activeTab === 'linkedin_post' && (
             <div className="space-y-4">
@@ -385,7 +401,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
               <div className="space-y-3">
                 {Array.isArray(activeOutputData.content) ? (
                   activeOutputData.content.map((tweet: string, idx: number) => (
-                    <div key={idx} className="bg-white p-4 lg:p-5 rounded-2xl border border-slate-200/90 text-xs text-slate-800 shadow-xs relative interactive-hover">
+                    <div key={idx} style={{ animationDelay: `${Math.min(idx, 8) * 55}ms` }} className="result-reveal bg-white p-4 lg:p-5 rounded-2xl border border-slate-200/90 text-xs text-slate-800 shadow-xs relative interactive-hover">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-mono text-[11px] font-bold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
                           Post {idx + 1} / {activeOutputData.content.length}
@@ -460,7 +476,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     </h4>
                     <div className="space-y-2">
                       {activeOutputData.content.recommended_actions.map((act: string, i: number) => (
-                        <div key={i} className="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200 text-slate-800">
+                        <div key={i} style={{ animationDelay: `${Math.min(i, 8) * 55}ms` }} className="result-reveal flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200 text-slate-800">
                           <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                           <span className="leading-relaxed font-medium" dir="auto">{act}</span>
                         </div>
@@ -662,7 +678,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                 {activeOutputData.content?.key_messages && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {activeOutputData.content.key_messages.map((msg: string, i: number) => (
-                      <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 text-xs text-slate-800 flex items-start gap-3 shadow-xs interactive-hover">
+                    <div key={i} style={{ animationDelay: `${Math.min(i, 8) * 55}ms` }} className="result-reveal bg-white p-4 rounded-xl border border-slate-200 text-xs text-slate-800 flex items-start gap-3 shadow-xs interactive-hover">
                         <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-cyan-100 text-cyan-900 font-extrabold font-mono shrink-0 border border-cyan-200">
                           0{i + 1}
                         </span>
@@ -732,7 +748,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     </h4>
                     <div className="space-y-3">
                       {activeOutputData.content.storyboard.map((scene: any, i: number) => (
-                        <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 text-xs grid grid-cols-1 md:grid-cols-3 gap-4 shadow-xs interactive-hover">
+                        <div key={i} style={{ animationDelay: `${Math.min(i, 8) * 55}ms` }} className="result-reveal bg-white p-4 rounded-xl border border-slate-200 text-xs grid grid-cols-1 md:grid-cols-3 gap-4 shadow-xs interactive-hover">
                           <div className="md:col-span-1 border-b md:border-b-0 md:border-r border-slate-200 pb-3 md:pb-0 md:pr-4">
                             <span className="font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 text-[11px] block mb-2 w-max">
                               {scene.scene || `Scene ${i+1}`}
