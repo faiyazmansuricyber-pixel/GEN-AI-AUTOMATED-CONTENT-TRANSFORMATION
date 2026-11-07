@@ -74,16 +74,22 @@ web_modules/
 
 # dotenv environment variable files
 .env
+.env.*
+!.env.example
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
 
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.db
+*.sqlite3
 
 # Next.js build output
+.next/
 .next
 out
 
