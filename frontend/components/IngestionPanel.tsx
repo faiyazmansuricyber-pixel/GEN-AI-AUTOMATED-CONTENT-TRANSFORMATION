@@ -402,7 +402,8 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
         <div>
           {/* Welcoming Empty State Card (Visible only when text box is empty and no file uploaded) */}
           {!inputText.trim() && !selectedFile && (
-            <div className="mb-4 p-5 rounded-2xl bg-gradient-to-r from-indigo-50/90 via-purple-50/70 to-slate-50 border border-indigo-100 shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 animate-fade-in-up">
+            <div className="aurora-surface mb-4 p-5 rounded-2xl bg-gradient-to-r from-indigo-50/90 via-purple-50/70 to-slate-50 border border-indigo-100 shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 animate-fade-in-up">
+              <div className="aurora-layer aurora-surface-glow" aria-hidden="true" />
               <div className="flex items-center gap-3.5">
                 <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/20 shrink-0">
                   <Sparkles className="h-6 w-6" />
