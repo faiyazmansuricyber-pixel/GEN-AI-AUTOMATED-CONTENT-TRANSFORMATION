@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 export function useReducedMotion(): boolean {
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -178,4 +178,68 @@ export function useCountUp(target: number, duration = 900): {
   }, [duration, inView, reducedMotion, target]);
 
   return { ref, value };
+}
+
+export function useMagnetic<T extends HTMLButtonElement = HTMLButtonElement>(): {
+  ref: React.RefObject<T | null>;
+  ripple: { id: number; x: number; y: number } | null;
+  onPointerDown: (event: ReactPointerEvent<T>) => void;
+} {
+  const ref = useRef<T>(null);
+  const reducedMotion = useReducedMotion();
+  const [ripple, setRipple] = useState<{ id: number; x: number; y: number } | null>(null);
+  const rippleId = useRef(0);
+  const rippleTimeout = useRef<number | null>(null);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || reducedMotion || !window.matchMedia("(pointer: fine)").matches) return;
+
+    let frame = 0;
+    let pointerX = 0;
+    let pointerY = 0;
+    const updatePosition = () => {
+      const bounds = element.getBoundingClientRect();
+      const x = (pointerX - bounds.left) / bounds.width - 0.5;
+      const y = (pointerY - bounds.top) / bounds.height - 0.5;
+      element.style.setProperty("--magnetic-x", `${x * 8}px`);
+      element.style.setProperty("--magnetic-y", `${y * 8}px`);
+      frame = 0;
+    };
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      if (!frame) frame = window.requestAnimationFrame(updatePosition);
+    };
+    const resetPosition = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = 0;
+      element.style.setProperty("--magnetic-x", "0px");
+      element.style.setProperty("--magnetic-y", "0px");
+    };
+
+    element.addEventListener("pointermove", handlePointerMove, { passive: true });
+    element.addEventListener("pointerleave", resetPosition);
+    return () => {
+      element.removeEventListener("pointermove", handlePointerMove);
+      element.removeEventListener("pointerleave", resetPosition);
+      resetPosition();
+    };
+  }, [reducedMotion]);
+
+  useEffect(() => () => {
+    if (rippleTimeout.current !== null) window.clearTimeout(rippleTimeout.current);
+  }, []);
+
+  const onPointerDown = (event: ReactPointerEvent<T>) => {
+    if (reducedMotion || event.pointerType === "touch") return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const id = ++rippleId.current;
+    setRipple({ id, x: event.clientX - bounds.left, y: event.clientY - bounds.top });
+    if (rippleTimeout.current !== null) window.clearTimeout(rippleTimeout.current);
+    rippleTimeout.current = window.setTimeout(() => setRipple(null), 550);
+  };
+
+  return { ref, ripple, onPointerDown };
 }

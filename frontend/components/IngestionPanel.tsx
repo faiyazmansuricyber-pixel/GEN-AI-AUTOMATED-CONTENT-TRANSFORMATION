@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useMouseSpotlight, useTilt } from '@/lib/hooks';
+import MagneticButton from '@/components/MagneticButton';
 import { 
   FileText, Upload, CheckSquare, Square, Sliders, Sparkles, 
   FileCheck, FileOutput, Presentation, 
@@ -197,6 +199,60 @@ const LANGUAGES = [
   { value: 'Urdu', native: 'اردو', label: 'اردو (Urdu)' },
 ];
 
+type OutputOption = (typeof OUTPUT_OPTIONS)[number];
+
+function FormatOptionCard({
+  option,
+  selected,
+  onToggle
+}: {
+  option: OutputOption;
+  selected: boolean;
+  onToggle: (id: string) => void;
+}) {
+  const spotlightRef = useMouseSpotlight<HTMLButtonElement>();
+  const tiltRef = useTilt<HTMLButtonElement>();
+  const BrandIcon = option.icon;
+
+  return (
+    <button
+      type="button"
+      ref={(element) => {
+        spotlightRef.current = element;
+        tiltRef.current = element;
+      }}
+      aria-pressed={selected}
+      onClick={() => onToggle(option.id)}
+      className={`spotlight-card tilt-card p-3.5 rounded-xl border text-left cursor-pointer transition-all duration-200 flex items-start gap-3 relative interactive-hover ${
+        selected
+          ? 'bg-white border-2 border-indigo-600 shadow-md ring-2 ring-indigo-100'
+          : 'bg-slate-50/60 border-slate-200 hover:border-slate-300 hover:bg-white shadow-xs'
+      }`}
+    >
+      <div className={`brand-icon-lift mt-0.5 p-2 rounded-lg ${option.bgColor} shadow-xs shrink-0 flex items-center justify-center`}>
+        <BrandIcon />
+      </div>
+
+      <div className="flex-1 min-w-0 pr-4">
+        <p className={`text-xs font-bold ${selected ? 'text-slate-900' : 'text-slate-700'}`}>
+          {option.label}
+        </p>
+        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2">
+          {option.desc}
+        </p>
+      </div>
+
+      <div className="absolute top-3.5 right-3">
+        {selected ? (
+          <CheckSquare className="h-4 w-4 text-indigo-600" />
+        ) : (
+          <Square className="h-4 w-4 text-slate-300" />
+        )}
+      </div>
+    </button>
+  );
+}
+
 export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: IngestionPanelProps) {
   const [activeTab, setActiveTab] = useState<'text' | 'file'>('text');
   const [inputText, setInputText] = useState('');
@@ -216,6 +272,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
   const [langSearch, setLangSearch] = useState('');
   const paramsContainerRef = useRef<HTMLDivElement>(null);
   const langSearchRef = useRef<HTMLInputElement>(null);
+  const paramsSpotlightRef = useMouseSpotlight<HTMLDivElement>();
 
   const selectedLang = LANGUAGES.find(l => l.value === parameters.language) || LANGUAGES[0];
 
@@ -530,39 +587,13 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {OUTPUT_OPTIONS.map((opt) => {
               const isSelected = selectedOutputs.includes(opt.id);
-              const BrandIcon = opt.icon;
               return (
-                <div
+                <FormatOptionCard
                   key={opt.id}
-                  onClick={() => toggleOutputType(opt.id)}
-                  className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all duration-200 flex items-start gap-3 relative interactive-hover ${
-                    isSelected
-                      ? `bg-white border-2 border-indigo-600 shadow-md ring-2 ring-indigo-100`
-                      : 'bg-slate-50/60 border-slate-200 hover:border-slate-300 hover:bg-white shadow-xs'
-                  }`}
-                >
-                  {/* Brand Icon Badge */}
-                  <div className={`mt-0.5 p-2 rounded-lg ${opt.bgColor} shadow-xs shrink-0 flex items-center justify-center`}>
-                    <BrandIcon />
-                  </div>
-
-                  <div className="flex-1 min-w-0 pr-4">
-                    <p className={`text-xs font-bold ${isSelected ? 'text-slate-900' : 'text-slate-700'}`}>
-                      {opt.label}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2">
-                      {opt.desc}
-                    </p>
-                  </div>
-
-                  <div className="absolute top-3.5 right-3">
-                    {isSelected ? (
-                      <CheckSquare className="h-4 w-4 text-indigo-600" />
-                    ) : (
-                      <Square className="h-4 w-4 text-slate-300" />
-                    )}
-                  </div>
-                </div>
+                  option={opt}
+                  selected={isSelected}
+                  onToggle={toggleOutputType}
+                />
               );
             })}
           </div>
@@ -586,7 +617,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
             </button>
           </div>
 
-          <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-200/90 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div ref={paramsSpotlightRef} className="spotlight-card relative bg-slate-50/70 p-4 rounded-xl border border-slate-200/90 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {/* 1. Tone */}
             <div className="relative">
               <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 mb-1.5">
@@ -975,7 +1006,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
           )}
 
           {/* Submit Action Button */}
-          <button
+          <MagneticButton
             type="submit"
             disabled={isLoading || selectedOutputs.length === 0}
             className="w-full gradient-btn py-3.5 px-6 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition cursor-pointer"
@@ -991,10 +1022,9 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                 <span>Generate {selectedOutputs.length} Output Deliverable{selectedOutputs.length === 1 ? '' : 's'} with Gemini 3 Flash</span>
               </>
             )}
-          </button>
+          </MagneticButton>
         </div>
       </form>
     </div>
   );
 }
-

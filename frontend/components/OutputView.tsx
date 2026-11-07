@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useMouseSpotlight } from '@/lib/hooks';
+import MagneticButton from '@/components/MagneticButton';
 import { 
   FileCheck, FileOutput, Presentation, 
   BarChart3, Video, Copy, Check, ChevronLeft, ChevronRight, 
@@ -123,6 +125,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
   const [currentSlide, setCurrentSlide] = useState(0);
   const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const outputSpotlightRef = useMouseSpotlight<HTMLDivElement>();
 
   if (allTabs.length === 0 && !isLoading) return null;
 
@@ -235,7 +238,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
 
         {/* Download All button */}
         {submissionId && outputKeys.length > 0 && (
-          <button
+          <MagneticButton
             id="download-all-outputs-btn"
             onClick={() => triggerDownload('', true)}
             disabled={downloadingKey === '__all__'}
@@ -247,7 +250,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
               <Archive className="h-4 w-4" />
             )}
             <span>{downloadingKey === '__all__' ? 'Preparing…' : 'Download All (.zip)'}</span>
-          </button>
+          </MagneticButton>
         )}
       </div>
 
@@ -281,7 +284,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
 
       {/* Render Active Output Content */}
       {activeOutputData && (
-        <div key={activeTab} className="space-y-6 animate-fade-in-up">
+        <div ref={outputSpotlightRef} key={activeTab} className="spotlight-card relative space-y-6 animate-fade-in-up">
           {/* 1. LINKEDIN POST */}
           {activeTab === 'linkedin_post' && (
             <div className="space-y-4">
@@ -313,7 +316,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     )}
                   </button>
                   {submissionId && (
-                    <button
+                    <MagneticButton
                       id="download-linkedin-btn"
                       onClick={() => triggerDownload('linkedin_post')}
                       disabled={downloadingKey === 'linkedin_post'}
@@ -321,7 +324,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     >
                       {downloadingKey === 'linkedin_post' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 text-slate-500" />}
                       <span>{downloadingKey === 'linkedin_post' ? '…' : 'Download'}</span>
-                    </button>
+                    </MagneticButton>
                   )}
                 </div>
               </div>
@@ -366,7 +369,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     )}
                   </button>
                   {submissionId && (
-                    <button
+                    <MagneticButton
                       id="download-twitter-btn"
                       onClick={() => triggerDownload('twitter_thread')}
                       disabled={downloadingKey === 'twitter_thread'}
@@ -374,7 +377,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     >
                       {downloadingKey === 'twitter_thread' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 text-slate-500" />}
                       <span>{downloadingKey === 'twitter_thread' ? '…' : 'Download'}</span>
-                    </button>
+                    </MagneticButton>
                   )}
                 </div>
               </div>
@@ -414,7 +417,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                 <div className="flex items-center gap-2">
                   <GroundingBadge claimsUsed={activeOutputData.claims_used} validChunkIds={validChunkIds} />
                   {submissionId && (
-                    <button
+                    <MagneticButton
                       id="download-advisory-btn"
                       onClick={() => triggerDownload('advisory')}
                       disabled={downloadingKey === 'advisory'}
@@ -422,7 +425,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     >
                       {downloadingKey === 'advisory' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 text-slate-500" />}
                       <span>{downloadingKey === 'advisory' ? '…' : 'Download'}</span>
-                    </button>
+                    </MagneticButton>
                   )}
                 </div>
               </div>
@@ -511,7 +514,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     )}
                   </button>
                   {submissionId && (
-                    <button
+                    <MagneticButton
                       id="download-executive-summary-btn"
                       onClick={() => triggerDownload('executive_summary')}
                       disabled={downloadingKey === 'executive_summary'}
@@ -519,7 +522,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     >
                       {downloadingKey === 'executive_summary' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 text-slate-500" />}
                       <span>{downloadingKey === 'executive_summary' ? '…' : 'Download'}</span>
-                    </button>
+                    </MagneticButton>
                   )}
                 </div>
               </div>
@@ -568,7 +571,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     </div>
                   )}
                   {submissionId && (
-                    <button
+                    <MagneticButton
                       id="download-presentation-btn"
                       onClick={() => triggerDownload('presentation')}
                       disabled={downloadingKey === 'presentation'}
@@ -576,7 +579,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     >
                       {downloadingKey === 'presentation' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 text-slate-500" />}
                       <span>{downloadingKey === 'presentation' ? '…' : 'Download .pdf'}</span>
-                    </button>
+                    </MagneticButton>
                   )}
                 </div>
               </div>
@@ -631,7 +634,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                 <div className="flex items-center gap-2">
                   <GroundingBadge claimsUsed={activeOutputData.claims_used} validChunkIds={validChunkIds} />
                   {submissionId && (
-                    <button
+                    <MagneticButton
                       id="download-infographic-btn"
                       onClick={() => triggerDownload('infographic')}
                       disabled={downloadingKey === 'infographic'}
@@ -639,7 +642,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     >
                       {downloadingKey === 'infographic' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 text-slate-500" />}
                       <span>{downloadingKey === 'infographic' ? '…' : 'Download'}</span>
-                    </button>
+                    </MagneticButton>
                   )}
                 </div>
               </div>
@@ -695,7 +698,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                 <div className="flex items-center gap-2">
                   <GroundingBadge claimsUsed={activeOutputData.claims_used} validChunkIds={validChunkIds} />
                   {submissionId && (
-                    <button
+                    <MagneticButton
                       id="download-video-package-btn"
                       onClick={() => triggerDownload('video_package')}
                       disabled={downloadingKey === 'video_package'}
@@ -703,7 +706,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     >
                       {downloadingKey === 'video_package' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 text-slate-500" />}
                       <span>{downloadingKey === 'video_package' ? '…' : 'Download'}</span>
-                    </button>
+                    </MagneticButton>
                   )}
                 </div>
               </div>

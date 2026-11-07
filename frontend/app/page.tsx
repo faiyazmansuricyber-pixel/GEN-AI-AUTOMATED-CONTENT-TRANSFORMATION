@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
+import CursorGlow from '@/components/CursorGlow';
 import StatsStrip from '@/components/StatsStrip';
 import IngestionPanel, { IngestParameters } from '@/components/IngestionPanel';
 import AnalysisView, { AnalysisData } from '@/components/AnalysisView';
@@ -186,7 +187,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-indigo-500 selection:text-white">
+    <div className="relative isolate min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-indigo-500 selection:text-white">
+      <CursorGlow />
       {/* Header Navbar */}
       <Header
         onOpenHistory={() => setHistoryOpen(true)}
@@ -195,7 +197,7 @@ export default function Home() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8">
         {/* Error Notification */}
         <ErrorBanner error={apiError} onDismiss={() => setApiError(null)} />
 
@@ -244,7 +246,7 @@ export default function Home() {
       />
 
       {/* Footer */}
-      <footer className="w-full border-t border-slate-200/80 bg-white/80 py-6 text-center text-xs text-slate-500 backdrop-blur-xs mt-8">
+      <footer className="relative z-10 w-full border-t border-slate-200/80 bg-white/80 py-6 text-center text-xs text-slate-500 backdrop-blur-xs mt-8">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="font-medium text-slate-600">
             SIH 2026 | PS 26154 | Team Cyphers — Content Transformation Platform
@@ -257,4 +259,3 @@ export default function Home() {
     </div>
   );
 }
-

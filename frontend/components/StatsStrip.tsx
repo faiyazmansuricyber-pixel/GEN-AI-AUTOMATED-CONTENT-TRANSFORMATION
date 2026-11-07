@@ -2,12 +2,52 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { Database, FileText, Layers, Cpu } from 'lucide-react';
+import { useMouseSpotlight, useTilt } from '@/lib/hooks';
 
 interface StatsStripProps {
   refreshTrigger?: number;
 }
 
 const API_BASE = "http://127.0.0.1:8000/api";
+
+function StatCard({
+  icon: Icon,
+  iconClass,
+  cardClass,
+  value,
+  label
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  iconClass: string;
+  cardClass: string;
+  value: number;
+  label: string;
+}) {
+  const spotlightRef = useMouseSpotlight<HTMLDivElement>();
+  const tiltRef = useTilt<HTMLDivElement>();
+
+  return (
+    <div
+      ref={(element) => {
+        spotlightRef.current = element;
+        tiltRef.current = element;
+      }}
+      className={`spotlight-card tilt-card relative flex items-center gap-3 px-3.5 py-2 rounded-xl border ${cardClass}`}
+    >
+      <div className={`brand-icon-lift p-2 rounded-lg text-white shadow-xs ${iconClass}`}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div>
+        <div className="text-base lg:text-lg font-extrabold text-slate-900 leading-none">
+          {value}
+        </div>
+        <div className="text-[11px] font-semibold text-slate-500 mt-0.5 whitespace-nowrap">
+          {label}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function StatsStrip({ refreshTrigger = 0 }: StatsStripProps) {
   const [stats, setStats] = useState<{
@@ -84,50 +124,27 @@ export default function StatsStrip({ refreshTrigger = 0 }: StatsStripProps) {
         </div>
 
         <div className="grid grid-cols-3 gap-3 sm:gap-6 w-full sm:w-auto">
-          {/* Stat 1: Submissions */}
-          <div className="flex items-center gap-3 px-3.5 py-2 rounded-xl bg-indigo-50/70 border border-indigo-100">
-            <div className="p-2 rounded-lg bg-indigo-600 text-white shadow-xs">
-              <FileText className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="text-base lg:text-lg font-extrabold text-slate-900 leading-none">
-                {stats.totalSubmissions}
-              </div>
-              <div className="text-[11px] font-semibold text-slate-500 mt-0.5 whitespace-nowrap">
-                Submissions
-              </div>
-            </div>
-          </div>
-
-          {/* Stat 2: Outputs Generated */}
-          <div className="flex items-center gap-3 px-3.5 py-2 rounded-xl bg-purple-50/70 border border-purple-100">
-            <div className="p-2 rounded-lg bg-purple-600 text-white shadow-xs">
-              <Cpu className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="text-base lg:text-lg font-extrabold text-slate-900 leading-none">
-                {stats.totalOutputs}
-              </div>
-              <div className="text-[11px] font-semibold text-slate-500 mt-0.5 whitespace-nowrap">
-                Outputs Generated
-              </div>
-            </div>
-          </div>
-
-          {/* Stat 3: Chunks Analyzed */}
-          <div className="flex items-center gap-3 px-3.5 py-2 rounded-xl bg-cyan-50/70 border border-cyan-100">
-            <div className="p-2 rounded-lg bg-cyan-600 text-white shadow-xs">
-              <Layers className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="text-base lg:text-lg font-extrabold text-slate-900 leading-none">
-                {stats.totalChunks}
-              </div>
-              <div className="text-[11px] font-semibold text-slate-500 mt-0.5 whitespace-nowrap">
-                Chunks Analyzed
-              </div>
-            </div>
-          </div>
+          <StatCard
+            icon={FileText}
+            iconClass="bg-indigo-600"
+            cardClass="bg-indigo-50/70 border-indigo-100"
+            value={stats.totalSubmissions}
+            label="Submissions"
+          />
+          <StatCard
+            icon={Cpu}
+            iconClass="bg-purple-600"
+            cardClass="bg-purple-50/70 border-purple-100"
+            value={stats.totalOutputs}
+            label="Outputs Generated"
+          />
+          <StatCard
+            icon={Layers}
+            iconClass="bg-cyan-600"
+            cardClass="bg-cyan-50/70 border-cyan-100"
+            value={stats.totalChunks}
+            label="Chunks Analyzed"
+          />
         </div>
       </div>
     </div>
