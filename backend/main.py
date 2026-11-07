@@ -3,11 +3,12 @@ import uuid
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel
 
 from database import init_db, save_submission, get_submission, list_submissions
+from exporters import DOCX_MEDIA_TYPE, PPTX_MEDIA_TYPE, ZIP_MEDIA_TYPE, export_all_outputs, export_output
 from parsers import chunk_text, extract_text_from_file
 from gemini_service import get_gemini_client, analyze_content_service, generate_all_outputs_parallel
 
@@ -24,6 +25,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 # Custom Error Handlers to guarantee { "error": ..., "message": ... } response shape
@@ -241,3 +243,48 @@ def get_submission_by_id(submission_id: str):
             detail=f"Submission with ID '{submission_id}' not found."
         )
     return sub
+
+@app.post("/api/export/{submission_id}/{output_type}")
+def export_submission_output(submission_id: str, output_type: str):
+    submission = get_submission(submission_id)
+    if not submission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Submission with ID '{submission_id}' not found."
+        )
+
+    outputs = submission.get("outputs") or {}
+    if output_type not in outputs:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Output '{output_type}' not found for submission '{submission_id}'."
+        )
+
+    content, filename, media_type = export_output(output_type, outputs[output_type])
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+@app.get("/api/export/{submission_id}/all")
+def export_all_submission_outputs(submission_id: str):
+    submission = get_submission(submission_id)
+    if not submission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Submission with ID '{submission_id}' not found."
+        )
+
+    outputs = submission.get("outputs") or {}
+    if not outputs:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No outputs found for submission '{submission_id}'."
+        )
+
+    return Response(
+        content=export_all_outputs(outputs),
+        media_type=ZIP_MEDIA_TYPE,
+        headers={"Content-Disposition": 'attachment; filename="all_outputs.zip"'}
+    )

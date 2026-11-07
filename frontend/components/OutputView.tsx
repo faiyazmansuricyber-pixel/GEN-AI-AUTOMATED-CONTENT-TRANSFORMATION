@@ -120,7 +120,7 @@ const BRAND_META: Record<string, { label: string; icon: React.FC; activeClass: s
   }
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
 export default function OutputView({ outputs, errors, selectedOutputs = [], isLoading, onChunkClick, submissionId, chunks }: OutputViewProps) {
   const validChunkIds = React.useMemo(() => {
@@ -169,13 +169,16 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
       const blob = await res.blob();
       const disposition = res.headers.get('Content-Disposition') || '';
       const nameMatch = disposition.match(/filename="?([^"]+)"?/);
-      const defaultExt = outputType === 'presentation' ? 'pdf' : 'docx';
+      const defaultExt = outputType === 'presentation' ? 'pptx' : 'docx';
       const filename = nameMatch ? nameMatch[1] : (isZip ? 'all_outputs.zip' : `${outputType}.${defaultExt}`);
       const anchor = document.createElement('a');
-      anchor.href = URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(blob);
+      anchor.href = objectUrl;
       anchor.download = filename;
+      document.body.appendChild(anchor);
       anchor.click();
-      URL.revokeObjectURL(anchor.href);
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Download failed. Please try again.';
       setDownloadError(message);
@@ -594,7 +597,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-purple-50 text-slate-700 border border-slate-200 text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-60 interactive-hover"
                     >
                       {downloadingKey === 'presentation' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 text-slate-500" />}
-                      <span>{downloadingKey === 'presentation' ? '…' : 'Download .pdf'}</span>
+                      <span>{downloadingKey === 'presentation' ? '…' : 'Download .pptx'}</span>
                     </MagneticButton>
                   )}
                 </div>

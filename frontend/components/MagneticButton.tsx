@@ -9,6 +9,7 @@ export default function MagneticButton({
   children,
   className = "",
   onPointerDown,
+  type = "button",
   ...props
 }: MagneticButtonProps) {
   const { ref, ripple, onPointerDown: handlePointerDown } = useMagnetic();
@@ -16,6 +17,7 @@ export default function MagneticButton({
   return (
     <button
       {...props}
+      type={type}
       ref={ref}
       onPointerDown={(event) => {
         handlePointerDown(event);
