@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react';
+import { useCountUp, useInView, useReducedMotion } from '@/lib/hooks';
 import { Brain, Tag, Layers, CheckCircle2, Globe, MessageSquare, Users, Sparkles, ShieldCheck, PieChart as PieChartIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -66,7 +67,20 @@ const CATEGORY_STYLES = {
   }
 };
 
+function AnimatedMetric({ value, suffix = '' }: { value: number; suffix?: string }) {
+  const { ref, value: displayValue } = useCountUp(value);
+
+  return (
+    <div ref={ref} className="analysis-stat-number" aria-label={`${value}${suffix}`}>
+      {displayValue}{suffix}
+    </div>
+  );
+}
+
 export default function AnalysisView({ analysis, isLoading, onChunkClick }: AnalysisViewProps) {
+  const reducedMotion = useReducedMotion();
+  const { ref: chartRef, inView: chartInView } = useInView<HTMLDivElement>(0.25);
+
   // Categorize entities
   const categorizedEntities = useMemo(() => {
     return (analysis?.entities || []).map(ent => ({
@@ -99,7 +113,7 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
   // Skeleton Loading State
   if (isLoading && !analysis) {
     return (
-      <div className="w-full bg-white rounded-2xl p-6 lg:p-7 shadow-lg mb-8 border border-purple-200/80 relative overflow-hidden animate-fade-in-up">
+      <div className="analysis-intelligence-view w-full bg-white rounded-2xl p-6 lg:p-7 shadow-lg mb-8 border border-purple-200/80 relative overflow-hidden animate-fade-in-up">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500" />
         
         {/* Skeleton Header */}
@@ -174,7 +188,7 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
   const categoriesPresent = Array.from(new Set(categorizedEntities.map(e => e.category)));
 
   return (
-    <div className="w-full bg-white rounded-2xl p-6 lg:p-7 shadow-lg mb-8 border border-purple-200/80 relative overflow-hidden animate-fade-in-up">
+    <div className="analysis-intelligence-view w-full bg-white rounded-2xl p-6 lg:p-7 shadow-lg mb-8 border border-purple-200/80 relative overflow-hidden animate-fade-in-up">
       {/* Top accent line */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500" />
 
@@ -216,42 +230,42 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
 
       {/* KEY STATS ROW */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <div className="p-3 rounded-xl bg-purple-50/70 border border-purple-100 flex items-center gap-3">
+        <div className="analysis-stat-card analysis-stat-purple p-3 rounded-xl bg-purple-50/70 border border-purple-100 flex items-center gap-3">
           <div className="p-2 bg-purple-600 text-white rounded-lg shadow-xs">
             <CheckCircle2 className="h-4 w-4" />
           </div>
           <div>
-            <div className="text-lg font-extrabold text-slate-900 leading-none">{totalClaims}</div>
+            <AnimatedMetric value={totalClaims} />
             <div className="text-[11px] text-slate-500 font-semibold mt-0.5">Extracted Claims</div>
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center gap-3">
+        <div className="analysis-stat-card analysis-stat-indigo p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center gap-3">
           <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-xs">
             <Tag className="h-4 w-4" />
           </div>
           <div>
-            <div className="text-lg font-extrabold text-slate-900 leading-none">{totalEntities}</div>
+            <AnimatedMetric value={totalEntities} />
             <div className="text-[11px] text-slate-500 font-semibold mt-0.5">Key Entities</div>
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-cyan-50/70 border border-cyan-100 flex items-center gap-3">
+        <div className="analysis-stat-card analysis-stat-cyan p-3 rounded-xl bg-cyan-50/70 border border-cyan-100 flex items-center gap-3">
           <div className="p-2 bg-cyan-600 text-white rounded-lg shadow-xs">
             <Layers className="h-4 w-4" />
           </div>
           <div>
-            <div className="text-lg font-extrabold text-slate-900 leading-none">{uniqueChunks}</div>
+            <AnimatedMetric value={uniqueChunks} />
             <div className="text-[11px] text-slate-500 font-semibold mt-0.5">Source Chunks Linked</div>
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-100 flex items-center gap-3">
+        <div className="analysis-stat-card analysis-stat-emerald p-3 rounded-xl bg-emerald-50/70 border border-emerald-100 flex items-center gap-3">
           <div className="p-2 bg-emerald-600 text-white rounded-lg shadow-xs">
             <ShieldCheck className="h-4 w-4" />
           </div>
           <div>
-            <div className="text-lg font-extrabold text-slate-900 leading-none">100%</div>
+            <AnimatedMetric value={100} suffix="%" />
             <div className="text-[11px] text-slate-500 font-semibold mt-0.5">Provenance Verified</div>
           </div>
         </div>
@@ -283,13 +297,16 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
 
             <div className="space-y-2.5">
               {analysis.key_claims?.map((item, idx) => (
-                <div key={idx} className="bg-white p-3.5 rounded-xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs hover:border-slate-300 transition interactive-hover">
+                <div key={idx} className="analysis-claim-card bg-white p-3.5 rounded-xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs hover:border-slate-300 transition interactive-hover">
                   <p className="text-slate-800 font-medium leading-relaxed flex-1" dir="auto">
                     <span className="font-bold text-purple-700 font-mono mr-1.5">{idx + 1}.</span>
                     {item.claim}
                   </p>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[10px] text-slate-400 uppercase font-semibold mr-1">Source:</span>
+                    <span className="analysis-claim-source-count">
+                      {item.source_chunk_ids?.length || 0} {item.source_chunk_ids?.length === 1 ? 'source' : 'sources'}
+                    </span>
                     {item.source_chunk_ids?.map((cid) => (
                       <button
                         key={cid}
@@ -334,7 +351,7 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
                   <PieChartIcon className="h-3.5 w-3.5 text-indigo-600" />
                   <span>Category Breakdown</span>
                 </div>
-                <div className="w-full h-[170px] flex items-center justify-center">
+                <div ref={chartRef} className="analysis-chart-wrap w-full h-[170px] flex items-center justify-center">
                   <ResponsiveContainer width="100%" height={170}>
                     <PieChart>
                       <Pie
@@ -346,6 +363,8 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
                         innerRadius={36}
                         outerRadius={62}
                         paddingAngle={4}
+                        isAnimationActive={!reducedMotion && chartInView}
+                        animationDuration={850}
                       >
                         {categoryChartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
@@ -363,6 +382,15 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
                       />
                     </PieChart>
                   </ResponsiveContainer>
+                </div>
+                <div className="analysis-chart-legend" aria-label="Entity category counts">
+                  {categoryChartData.map((entry) => (
+                    <div key={entry.category}>
+                      <i style={{ backgroundColor: entry.color }} />
+                      <span>{entry.name}</span>
+                      <strong>{entry.count}</strong>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

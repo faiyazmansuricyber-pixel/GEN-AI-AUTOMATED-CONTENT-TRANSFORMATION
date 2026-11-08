@@ -1949,3 +1949,278 @@ html {
   .infographic-metrics > div { min-height: 82px; }
   .infographic-metrics span { font-size: 9px; letter-spacing: 0.04em; }
 }
+
+.editorial-shell .analysis-intelligence-view {
+  border-top: 5px solid var(--ui-violet);
+  box-shadow: 0 26px 62px -44px rgba(124, 58, 237, 0.48), var(--ui-shadow-medium);
+}
+
+.analysis-stat-card {
+  position: relative;
+  min-height: 92px;
+  overflow: hidden;
+  border-radius: 18px !important;
+  box-shadow: 0 16px 34px -26px var(--stat-shadow), 0 3px 8px rgba(11, 18, 32, 0.05) !important;
+  transition: transform 200ms var(--ui-ease), box-shadow 200ms ease;
+}
+
+.analysis-stat-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  content: "";
+  background: linear-gradient(180deg, var(--stat-bright), var(--stat-color));
+}
+
+.analysis-stat-card::after {
+  position: absolute;
+  top: -34px;
+  right: -25px;
+  width: 105px;
+  height: 105px;
+  border: 1px solid var(--stat-orbit);
+  border-radius: 50%;
+  content: "";
+  box-shadow: 0 0 0 13px var(--stat-orbit);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.analysis-stat-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.analysis-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 40px -26px var(--stat-shadow), 0 0 0 1px var(--stat-orbit) !important;
+}
+
+.analysis-stat-purple {
+  --stat-color: #7c3aed;
+  --stat-bright: #c4b5fd;
+  --stat-shadow: rgba(124, 58, 237, 0.45);
+  --stat-orbit: rgba(124, 58, 237, 0.12);
+  background: linear-gradient(115deg, #f5f0ff 0%, #fff 100%) !important;
+}
+
+.analysis-stat-indigo {
+  --stat-color: #4f46e5;
+  --stat-bright: #a5b4fc;
+  --stat-shadow: rgba(79, 70, 229, 0.4);
+  --stat-orbit: rgba(79, 70, 229, 0.11);
+  background: linear-gradient(115deg, #eef2ff 0%, #fff 100%) !important;
+}
+
+.analysis-stat-cyan {
+  --stat-color: #0891b2;
+  --stat-bright: #67e8f9;
+  --stat-shadow: rgba(8, 145, 178, 0.42);
+  --stat-orbit: rgba(8, 145, 178, 0.11);
+  background: linear-gradient(115deg, #ecfeff 0%, #fff 100%) !important;
+}
+
+.analysis-stat-emerald {
+  --stat-color: #059669;
+  --stat-bright: #6ee7b7;
+  --stat-shadow: rgba(5, 150, 105, 0.4);
+  --stat-orbit: rgba(5, 150, 105, 0.11);
+  background: linear-gradient(115deg, #ecfdf5 0%, #fff 100%) !important;
+}
+
+.analysis-stat-card > div:first-child {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 18px -10px var(--stat-shadow) !important;
+}
+
+.analysis-stat-number {
+  color: #10192d;
+  font-size: clamp(26px, 2.2vw, 36px);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-stat-number + div {
+  margin-top: 5px;
+  color: #4b5a72;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.analysis-claim-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 17px !important;
+  padding: 17px 18px !important;
+  background: linear-gradient(110deg, #fff 0%, #fff 68%, #f7f5ff 100%);
+  box-shadow: 0 14px 28px -24px rgba(79, 70, 229, 0.42), 0 3px 8px rgba(11, 18, 32, 0.04) !important;
+}
+
+.analysis-claim-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  content: "";
+  background: linear-gradient(#a78bfa, #4f46e5);
+  opacity: 0.72;
+}
+
+.analysis-claim-source-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  padding: 0 9px;
+  color: #3730a3;
+  background: #eef2ff;
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.analysis-chart-wrap {
+  border-radius: 16px;
+  background: radial-gradient(circle at center, #f7f5ff 0, #fff 62%);
+}
+
+.analysis-chart-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  width: 100%;
+}
+
+.analysis-chart-legend > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #e6e9f2;
+  border-radius: 10px;
+  padding: 7px 8px;
+  color: #48566e;
+  background: #fbfcff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.analysis-chart-legend i {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 3px;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.1);
+}
+
+.analysis-chart-legend span {
+  overflow: hidden;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analysis-chart-legend strong {
+  color: #18243a;
+  font-variant-numeric: tabular-nums;
+}
+
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) {
+  border-top: 5px solid var(--ui-emerald);
+  box-shadow: 0 28px 68px -46px rgba(5, 150, 105, 0.42), var(--ui-shadow-medium);
+}
+
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) {
+  min-height: 620px;
+  align-items: stretch;
+}
+
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) > div,
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) > aside {
+  display: flex;
+  max-height: min(76vh, 720px);
+  min-height: 620px;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #c4b5fd transparent;
+  scrollbar-width: thin;
+}
+
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) > div > :where([class*="max-h-"]),
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) > aside > :where([class*="max-h-"]) {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) > div:first-child > div:first-child,
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) > div:nth-child(2) > div:first-child,
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) > aside > div:first-child {
+  position: sticky;
+  top: -1rem;
+  z-index: 5;
+  margin: -1rem -1rem 0.75rem;
+  border-bottom: 1px solid #e4e7ef;
+  padding: 1rem 1rem 0.75rem;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(12px);
+}
+
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) > div:first-child > label {
+  position: sticky;
+  top: 3.2rem;
+  z-index: 4;
+  padding-bottom: 0.35rem;
+  background: #fff;
+}
+
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) button[aria-pressed="true"] {
+  border-color: #8b5cf6;
+  background: linear-gradient(110deg, #f5f3ff, #fff);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.13), 0 10px 24px -16px rgba(109, 40, 217, 0.58);
+}
+
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) article[data-chunk-id] {
+  border-radius: 16px;
+  padding: 15px;
+  background: linear-gradient(145deg, #fff, #f7fbff);
+  box-shadow: 0 12px 28px -23px rgba(8, 145, 178, 0.42);
+}
+
+.editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) article[data-chunk-id].evidence-glow {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.12), 0 16px 34px -20px rgba(6, 182, 212, 0.5);
+}
+
+.editorial-shell .evidence-beam-line {
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 5px rgba(6, 182, 212, 0.78)) drop-shadow(0 0 14px rgba(99, 102, 241, 0.46));
+}
+
+.editorial-shell .evidence-beam-pulse {
+  filter: drop-shadow(0 0 9px rgba(6, 182, 212, 0.72));
+}
+
+.editorial-shell .evidence-glow::after {
+  border-width: 3px;
+  box-shadow: 0 0 24px rgba(6, 182, 212, 0.54), 0 0 42px rgba(99, 102, 241, 0.22);
+}
+
+@media (max-width: 1023px) {
+  .editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) > div,
+  .editorial-shell #sources > section:has(input[aria-label="Search extracted claims"]) > div:nth-child(2) > aside {
+    max-height: none;
+    min-height: 340px;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 640px) {
+  .analysis-stat-card { min-height: 84px; gap: 9px; padding: 10px !important; }
+  .analysis-stat-card > div:first-child { padding: 8px !important; }
+  .analysis-stat-number { font-size: 26px; }
+  .analysis-chart-legend { gap: 5px; }
+  .analysis-chart-legend > div { gap: 5px; padding: 6px; font-size: 10px; }
+}
