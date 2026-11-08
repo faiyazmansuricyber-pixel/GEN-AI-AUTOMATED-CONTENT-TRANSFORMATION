@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Header from '@/components/Header';
+import Hero from '@/components/Hero';
 import CursorGlow from '@/components/CursorGlow';
 import StatsStrip from '@/components/StatsStrip';
 import IngestionPanel, { IngestParameters } from '@/components/IngestionPanel';
@@ -343,6 +344,8 @@ export default function Home() {
         backendStatus={backendStatus}
         modelName={modelName}
       />
+
+      <Hero />
 
       {/* Main Container */}
       <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8">
