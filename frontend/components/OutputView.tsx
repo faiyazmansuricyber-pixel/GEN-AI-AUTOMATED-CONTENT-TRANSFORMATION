@@ -137,11 +137,19 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
 
   const [selectedTab, setSelectedTab] = useState<string | null>(null);
   const activeTab = (selectedTab && allTabs.includes(selectedTab)) ? selectedTab : (allTabs[0] || 'linkedin_post');
+  const [tabDirection, setTabDirection] = useState<'next' | 'previous'>('next');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [linkedinExpanded, setLinkedinExpanded] = useState(false);
   const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const outputSpotlightRef = useMouseSpotlight<HTMLDivElement>();
+
+  const selectTab = (nextTab: string) => {
+    setTabDirection(allTabs.indexOf(nextTab) >= allTabs.indexOf(activeTab) ? 'next' : 'previous');
+    setSelectedTab(nextTab);
+    setCurrentSlide(0);
+  };
 
   if (allTabs.length === 0 && !isLoading) return null;
 
@@ -189,6 +197,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
   };
 
   const activeOutputData = outputs[activeTab];
+  const executiveSummaryText = String(activeOutputData?.content ?? '');
   const activeError = errors[activeTab];
   const isTabPending = isLoading && !activeOutputData && !activeError;
 
@@ -234,7 +243,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
             return (
               <button
                 key={key}
-                onClick={() => { setSelectedTab(key); setCurrentSlide(0); }}
+                onClick={() => selectTab(key)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer interactive-hover ${
                   isActive
                     ? isFailed ? 'bg-rose-600 text-white shadow-md' : meta.activeClass
@@ -303,7 +312,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
 
       {/* Render Active Output Content */}
       {activeOutputData && (
-        <div ref={outputSpotlightRef} key={activeTab} className="spotlight-card relative space-y-6 tab-content-transition">
+        <div ref={outputSpotlightRef} key={activeTab} data-tab-direction={tabDirection} className="spotlight-card relative space-y-6 tab-content-transition">
           {/* 1. LINKEDIN POST */}
           {activeTab === 'linkedin_post' && (
             <div className="space-y-4">
@@ -348,9 +357,39 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 text-xs lg:text-sm text-slate-800 whitespace-pre-wrap leading-relaxed font-sans shadow-xs" dir="auto">
-                {activeOutputData.content}
-              </div>
+              <article className="linkedin-post-preview">
+                <header className="linkedin-author">
+                  <span className="linkedin-avatar" aria-hidden="true">AI</span>
+                  <span className="linkedin-author-copy">
+                    <strong>AI Content Intelligence Studio</strong>
+                    <span>One source. Every channel.</span>
+                    <span>Team Cyphers · Public</span>
+                  </span>
+                  <span className="linkedin-post-menu" aria-hidden="true">•••</span>
+                </header>
+                <p className={`linkedin-post-copy${linkedinExpanded ? ' is-expanded' : ''}`} dir="auto">
+                  {activeOutputData.content}
+                </p>
+                <button
+                  type="button"
+                  className="linkedin-see-more"
+                  onClick={() => setLinkedinExpanded((expanded) => !expanded)}
+                  aria-expanded={linkedinExpanded}
+                >
+                  {linkedinExpanded ? 'See less' : 'See more'}
+                </button>
+                <div className="linkedin-reaction-summary" aria-hidden="true">
+                  <span><i className="linkedin-reaction-dot">✓</i> Source-grounded content</span>
+                  <span>·</span>
+                  <span>{activeOutputData.claims_used?.length || 0} references</span>
+                </div>
+                <div className="linkedin-reaction-bar" aria-hidden="true">
+                  <span><b>↑</b> Like</span>
+                  <span><b>▢</b> Comment</span>
+                  <span><b>↻</b> Repost</span>
+                  <span><b>➤</b> Send</span>
+                </div>
+              </article>
             </div>
           )}
 
@@ -404,16 +443,35 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
               <div className="space-y-3">
                 {Array.isArray(activeOutputData.content) ? (
                   activeOutputData.content.map((tweet: string, idx: number) => (
-                    <div key={idx} style={{ animationDelay: `${Math.min(idx, 8) * 55}ms` }} className="result-reveal bg-white p-4 lg:p-5 rounded-2xl border border-slate-200/90 text-xs text-slate-800 shadow-xs relative interactive-hover">
+                    <div key={idx} style={{ animationDelay: `${Math.min(idx, 8) * 55}ms` }} className="x-post-preview result-reveal bg-white p-4 lg:p-5 rounded-2xl border border-slate-200/90 text-xs text-slate-800 shadow-xs relative interactive-hover">
+                      <div className="x-post-author">
+                        <span className="x-post-avatar" aria-hidden="true">X</span>
+                        <span className="x-post-author-copy">
+                          <strong>AI Content Intelligence Studio</strong>
+                          <span>@teamcyphers · Public</span>
+                        </span>
+                        <span className="x-post-more" aria-hidden="true">•••</span>
+                      </div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-mono text-[11px] font-bold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
                           Post {idx + 1} / {activeOutputData.content.length}
                         </span>
-                        <span className="text-[11px] text-slate-400 font-mono">
-                          {tweet.length} / 280 characters
+                        <span className="x-character-count">
+                          <svg viewBox="0 0 40 40" aria-label={`${tweet.length} of 280 characters`}>
+                            <circle className="x-character-track" cx="20" cy="20" r="16" />
+                            <circle
+                              className={`x-character-progress${tweet.length > 280 ? ' is-over-limit' : ''}`}
+                              cx="20"
+                              cy="20"
+                              r="16"
+                              strokeDasharray={2 * Math.PI * 16}
+                              strokeDashoffset={2 * Math.PI * 16 * (1 - Math.min(tweet.length / 280, 1))}
+                            />
+                          </svg>
+                          <span>{tweet.length} / 280 characters</span>
                         </span>
                       </div>
-                      <p className="leading-relaxed text-sm text-slate-800" dir="auto">{tweet}</p>
+                      <p className="x-post-copy leading-relaxed text-sm text-slate-800" dir="auto">{tweet}</p>
                     </div>
                   ))
                 ) : (
@@ -449,7 +507,15 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 space-y-6 text-xs lg:text-sm text-slate-800 shadow-xs">
+              <article className="advisory-document-page bg-white p-6 rounded-2xl border border-slate-200 space-y-6 text-xs lg:text-sm text-slate-800 shadow-xs">
+                <header className="advisory-letterhead">
+                  <span className="advisory-letterhead-mark"><FileCheck className="h-5 w-5" /></span>
+                  <span>
+                    <strong>AI Content Intelligence Studio</strong>
+                    <small>FORMAL ADVISORY · SOURCE-VERIFIED</small>
+                  </span>
+                  <span className="advisory-document-stamp">TEAM CYPHERS</span>
+                </header>
                 {activeOutputData.content?.summary && (
                   <div>
                     <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -500,7 +566,8 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     </ul>
                   </div>
                 )}
-              </div>
+                <footer className="advisory-document-footer">Prepared from the supplied source · Claims linked to source chunks</footer>
+              </article>
             </div>
           )}
 
@@ -546,9 +613,19 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-emerald-50/40 via-white to-slate-50 p-6 rounded-2xl border border-emerald-200/90 text-xs lg:text-sm text-slate-800 leading-relaxed shadow-xs" dir="auto">
-                {activeOutputData.content}
-              </div>
+              <article className="executive-memo">
+                <header className="executive-memo-header">
+                  <span>EXECUTIVE BRIEFING</span>
+                  <span>AI CONTENT INTELLIGENCE STUDIO</span>
+                </header>
+                <div className="executive-memo-body" dir="auto">{activeOutputData.content}</div>
+                {executiveSummaryText.trim() && (
+                  <aside className="executive-bottom-line" dir="auto">
+                    <strong>Bottom line</strong>
+                    <span>{executiveSummaryText.split(/[.!?]\s/)[0]}</span>
+                  </aside>
+                )}
+              </article>
             </div>
           )}
 
@@ -605,7 +682,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
 
               {/* Slide Card View */}
               {activeOutputData.content?.slides?.[currentSlide] && (
-                <div className="bg-white p-6 lg:p-8 rounded-2xl border border-purple-200/90 shadow-md space-y-5">
+                <div className="presentation-slide-frame bg-white p-6 lg:p-8 rounded-2xl border border-purple-200/90 shadow-md space-y-5">
                   <div className="border-b border-purple-100 pb-4">
                     <span className="text-[10px] font-bold text-purple-700 uppercase tracking-widest bg-purple-50 px-2.5 py-0.5 rounded border border-purple-200">
                       SLIDE {currentSlide + 1}
@@ -635,6 +712,24 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                       </p>
                     </div>
                   )}
+                </div>
+              )}
+              {activeOutputData.content?.slides?.length > 0 && (
+                <div className="presentation-thumbnails" role="group" aria-label="Presentation slide thumbnails">
+                  {activeOutputData.content.slides.map((slide: any, index: number) => (
+                    <button
+                      type="button"
+                      key={index}
+                      className={`presentation-thumbnail${currentSlide === index ? ' is-active' : ''}`}
+                      onClick={() => setCurrentSlide(index)}
+                      aria-label={`Show slide ${index + 1}: ${slide.title}`}
+                      aria-current={currentSlide === index ? 'true' : undefined}
+                    >
+                      <span className="presentation-thumbnail-number">0{index + 1}</span>
+                      <strong>{slide.title}</strong>
+                      <span className="presentation-thumbnail-lines" aria-hidden="true"><i /><i /><i /></span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -676,6 +771,12 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     </h3>
                   </div>
                 )}
+
+                <div className="infographic-metrics" aria-label="Infographic source metrics">
+                  <div><strong>{activeOutputData.claims_used?.length || 0}</strong><span>CLAIMS TRACED</span></div>
+                  <div><strong>{chunks?.length || 0}</strong><span>SOURCE CHUNKS</span></div>
+                  <div><strong>{activeOutputData.content?.key_messages?.length || 0}</strong><span>KEY MESSAGES</span></div>
+                </div>
 
                 {/* Key Messages Grid */}
                 {activeOutputData.content?.key_messages && (
@@ -749,9 +850,12 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <Video className="h-4 w-4 text-rose-600" /> Scene Storyboard Sequence
                     </h4>
-                    <div className="space-y-3">
-                      {activeOutputData.content.storyboard.map((scene: any, i: number) => (
-                        <div key={i} style={{ animationDelay: `${Math.min(i, 8) * 55}ms` }} className="result-reveal bg-white p-4 rounded-xl border border-slate-200 text-xs grid grid-cols-1 md:grid-cols-3 gap-4 shadow-xs interactive-hover">
+                  <div className="video-filmstrip" aria-hidden="true">
+                    {Array.from({ length: 10 }, (_, frame) => <span key={frame} />)}
+                  </div>
+                  <div className="space-y-3">
+                    {activeOutputData.content.storyboard.map((scene: any, i: number) => (
+                      <div key={i} data-timecode={`00:${String(i * 8).padStart(2, '0')}`} style={{ animationDelay: `${Math.min(i, 8) * 55}ms` }} className="video-scene-card result-reveal bg-white p-4 rounded-xl border border-slate-200 text-xs grid grid-cols-1 md:grid-cols-3 gap-4 shadow-xs interactive-hover">
                           <div className="md:col-span-1 border-b md:border-b-0 md:border-r border-slate-200 pb-3 md:pb-0 md:pr-4">
                             <span className="font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 text-[11px] block mb-2 w-max">
                               {scene.scene || `Scene ${i+1}`}
