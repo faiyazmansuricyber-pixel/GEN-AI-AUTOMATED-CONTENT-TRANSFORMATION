@@ -1283,3 +1283,220 @@
   .hero-fan { transform: none !important; }
   .hero-format-card { transition: none !important; }
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+.header-aurora {
+  transition: none;
+}
+
+.header-scrolled {
+  background-color: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 32px -24px rgba(15, 23, 42, 0.48);
+}
+
+.header-scrolled [data-header-logo] {
+  transform: scale(0.84);
+  transform-origin: left center;
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.header-scroll-progress {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ui-cyan), var(--ui-indigo), var(--ui-violet));
+  box-shadow: 0 0 12px rgba(79, 70, 229, 0.32);
+  transform: scaleX(0);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.workspace-nav {
+  isolation: isolate;
+}
+
+.workspace-nav-active-pill {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  border: 1px solid rgba(99, 102, 241, 0.17);
+  border-radius: 12px;
+  background: linear-gradient(110deg, rgba(224, 231, 255, 0.86), rgba(237, 233, 254, 0.82));
+  box-shadow: 0 4px 14px -10px rgba(79, 70, 229, 0.45);
+  transform-origin: left center;
+  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 180ms ease;
+  pointer-events: none;
+}
+
+.workspace-nav-link {
+  position: relative;
+  z-index: 1;
+  color: #475569;
+  transition: color 180ms ease;
+}
+
+.workspace-nav-link:hover,
+.workspace-nav-link[aria-current="location"] {
+  color: #3730a3;
+}
+
+.workspace-nav-link:focus-visible {
+  z-index: 2;
+}
+
+.editorial-shell main section[aria-label="Transformation workflow status"] {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(165, 180, 252, 0.48);
+  border-left: 4px solid var(--ui-cyan);
+  background:
+    radial-gradient(ellipse at 2% 50%, rgba(103, 232, 249, 0.12), transparent 34%),
+    linear-gradient(112deg, #fff 0%, #f5f7ff 55%, #f6f1ff 100%);
+  box-shadow: 0 20px 46px -38px rgba(79, 70, 229, 0.56), var(--ui-shadow-soft);
+}
+
+.editorial-shell main section[aria-label="Transformation workflow status"]::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  opacity: 0.3;
+  background-image: radial-gradient(rgba(99, 102, 241, 0.2) 1px, transparent 1px);
+  background-size: 15px 15px;
+  pointer-events: none;
+}
+
+.editorial-shell main section[aria-label="Transformation workflow status"]::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -30%;
+  width: 24%;
+  content: "";
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.15), transparent);
+  transform: skewX(-18deg);
+  pointer-events: none;
+}
+
+.editorial-shell main section[aria-label="Transformation workflow status"]:has(svg.animate-spin)::after {
+  opacity: 1;
+  animation: pipelineLightTravel 1.8s ease-in-out infinite;
+}
+
+.editorial-shell main section[aria-label="Transformation workflow status"] > div,
+.editorial-shell main section[aria-label="Transformation workflow status"] ol {
+  position: relative;
+  z-index: 1;
+}
+
+.editorial-shell main section[aria-label="Transformation workflow status"] ol > li > span:not([aria-hidden="true"]):not(.min-w-0) {
+  width: 34px;
+  height: 34px;
+  border-width: 1px;
+  box-shadow: 0 5px 13px -9px rgba(15, 23, 42, 0.48);
+}
+
+.editorial-shell main section[aria-label="Transformation workflow status"] ol > li:has(svg.animate-spin) > span:not([aria-hidden="true"]):not(.min-w-0) {
+  border-color: #a5b4fc;
+  background: linear-gradient(145deg, #eef2ff, #ede9fe);
+  color: #4f46e5;
+  box-shadow: 0 0 0 5px rgba(129, 140, 248, 0.12), 0 7px 18px -8px rgba(79, 70, 229, 0.56);
+}
+
+.editorial-shell main section[aria-label="Transformation workflow status"] ol > li > span[aria-hidden="true"] {
+  position: relative;
+  background: linear-gradient(90deg, #a5f3fc, #c4b5fd);
+}
+
+.editorial-shell main section[aria-label="Transformation workflow status"]:has(svg.animate-spin) ol > li > span[aria-hidden="true"]::after {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  content: "";
+  background: #fff;
+  box-shadow: 0 0 10px rgba(79, 70, 229, 0.9);
+  transform: translateY(-50%);
+  animation: pipelineNodeTravel 1.25s ease-in-out infinite;
+}
+
+.section-reveal-target {
+  opacity: 0;
+  translate: 0 var(--section-entry-y, 18px);
+  transition: opacity 520ms cubic-bezier(0.2, 0.8, 0.2, 1), translate 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.section-reveal-target.section-revealed {
+  opacity: 1;
+  translate: 0 var(--section-parallax-y, 0px);
+}
+
+.section-reveal-active {
+  will-change: opacity, translate;
+}
+
+@keyframes pipelineLightTravel {
+  0% { transform: translate3d(0, 0, 0) skewX(-18deg); }
+  100% { transform: translate3d(580%, 0, 0) skewX(-18deg); }
+}
+
+@keyframes pipelineNodeTravel {
+  0% { opacity: 0; transform: translate3d(0, -50%, 0); }
+  20%, 75% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(14px, -50%, 0); }
+}
+
+@supports (view-transition-name: root) {
+  ::view-transition-old(root) {
+    animation: viewFadeOut 180ms ease-in both;
+  }
+
+  ::view-transition-new(root) {
+    animation: viewFadeIn 260ms ease-out both;
+  }
+}
+
+@keyframes viewFadeOut {
+  to { opacity: 0; }
+}
+
+@keyframes viewFadeIn {
+  from { opacity: 0.72; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .header-scrolled [data-header-logo],
+  .workspace-nav-active-pill {
+    transition: none;
+  }
+
+  .section-reveal-target {
+    opacity: 1;
+    translate: none;
+    transition: none;
+  }
+
+  .section-reveal-active { will-change: auto; }
+  .editorial-shell main section[aria-label="Transformation workflow status"]::after,
+  .editorial-shell main section[aria-label="Transformation workflow status"] ol > li > span[aria-hidden="true"]::after {
+    animation: none !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}

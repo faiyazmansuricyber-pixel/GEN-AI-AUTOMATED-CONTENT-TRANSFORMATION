@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
+import SectionMotion from '@/components/SectionMotion';
 import CursorGlow from '@/components/CursorGlow';
 import StatsStrip from '@/components/StatsStrip';
 import IngestionPanel, { IngestParameters } from '@/components/IngestionPanel';
@@ -346,6 +347,7 @@ export default function Home() {
       />
 
       <Hero />
+      <SectionMotion />
 
       {/* Main Container */}
       <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8">
@@ -356,20 +358,25 @@ export default function Home() {
         <StatsStrip refreshTrigger={statsTrigger} />
 
         {/* Input & Options Form */}
+        <section id="workspace" className="scroll-mt-28">
         <IngestionPanel
           onSubmit={handleTransformSubmit}
           isLoading={isLoading}
           loadingStep={loadingStep}
         />
+        </section>
 
         {/* Analysis Results */}
+        <section id="analysis" className="scroll-mt-28">
         <AnalysisView
           analysis={analysis}
           isLoading={isLoading}
           onChunkClick={handleChunkClick}
         />
+        </section>
 
         {/* Deliverables Output Tabs */}
+        <section id="outputs" className="scroll-mt-28">
         <OutputView
           outputs={outputs}
           errors={errors}
@@ -379,8 +386,10 @@ export default function Home() {
           submissionId={submissionId || undefined}
           chunks={chunks}
         />
+        </section>
 
         {/* Source Traceability & Audit Panel */}
+        <section id="sources" className="scroll-mt-28">
         <SourceTraceability
           chunks={chunks}
           highlightedChunkId={highlightedChunkId}
@@ -388,6 +397,7 @@ export default function Home() {
           onClearHighlight={() => setHighlightedChunkId(null)}
           rawText={rawText}
         />
+        </section>
       </main>
 
       {evidenceBeam && (
