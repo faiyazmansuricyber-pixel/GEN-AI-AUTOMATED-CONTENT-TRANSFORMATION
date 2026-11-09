@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useMouseSpotlight } from '@/lib/hooks';
 import MagneticButton from '@/components/MagneticButton';
+import { API_BASE } from '@/lib/api';
 import { 
   FileCheck, FileOutput, Presentation, 
   BarChart3, Video, Copy, Check, ChevronLeft, ChevronRight, 
   MessageSquare, Sparkles, Layers, FileText, Eye,
-  Download, Archive, Loader2, AlertCircle
+  Download, Archive, Loader2, AlertCircle, Maximize2, Minimize2,
+  Pencil, Save, X, RotateCcw
 } from 'lucide-react';
 
 interface OutputViewProps {
@@ -18,6 +20,10 @@ interface OutputViewProps {
   onChunkClick?: (chunkId: string, sourceElement?: HTMLElement) => void;
   submissionId?: string;
   chunks?: any[];
+  onRegenerate?: (outputType: string) => void;
+  regeneratingOutput?: string | null;
+  canRegenerate?: boolean;
+  editContextKey?: number;
 }
 
 function GroundingBadge({ claimsUsed, validChunkIds }: { claimsUsed?: string[]; validChunkIds?: Set<string> }) {
@@ -39,7 +45,7 @@ function GroundingBadge({ claimsUsed, validChunkIds }: { claimsUsed?: string[]; 
           ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
           : 'bg-amber-50 text-amber-700 border-amber-200'
       }`}
-      title={`${validCount} of ${totalCount} claims verified against source chunks (${scorePercent}% grounded)`}
+      title={`${validCount} of ${totalCount} referenced source chunk IDs exist in this submission (${scorePercent}% matched)`}
     >
       <svg className="h-8 w-8 shrink-0" viewBox="0 0 36 36" aria-hidden="true">
         <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-200" />
@@ -57,7 +63,7 @@ function GroundingBadge({ claimsUsed, validChunkIds }: { claimsUsed?: string[]; 
           className={`grounding-ring ${is100 ? 'text-emerald-500' : 'text-amber-500'}`}
         />
       </svg>
-      <span>{validCount}/{totalCount} claims sourced</span>
+      <span>{validCount}/{totalCount} chunk refs matched</span>
     </div>
   );
 }
@@ -120,9 +126,19 @@ const BRAND_META: Record<string, { label: string; icon: React.FC; activeClass: s
   }
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
-
-export default function OutputView({ outputs, errors, selectedOutputs = [], isLoading, onChunkClick, submissionId, chunks }: OutputViewProps) {
+export default function OutputView({
+  outputs,
+  errors,
+  selectedOutputs = [],
+  isLoading,
+  onChunkClick,
+  submissionId,
+  chunks,
+  onRegenerate,
+  regeneratingOutput,
+  canRegenerate = false,
+  editContextKey
+}: OutputViewProps) {
   const validChunkIds = React.useMemo(() => {
     return new Set((chunks || []).map((c: any) => (typeof c === 'string' ? c : c.id)));
   }, [chunks]);
@@ -143,6 +159,15 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
   const [linkedinExpanded, setLinkedinExpanded] = useState(false);
   const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const [previewExpanded, setPreviewExpanded] = useState(false);
+  const [localEdits, setLocalEdits] = useState<Record<string, unknown>>({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDraft, setEditDraft] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
+  const copyTimerRef = useRef<number | null>(null);
+  const downloadTimerRef = useRef<number | null>(null);
   const outputSpotlightRef = useMouseSpotlight<HTMLDivElement>();
 
   const selectTab = (nextTab: string) => {
@@ -151,12 +176,43 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
     setCurrentSlide(0);
   };
 
-  if (allTabs.length === 0 && !isLoading) return null;
+  useEffect(() => {
+    if (!previewExpanded) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPreviewExpanded(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [previewExpanded]);
 
-  const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 1500);
+  useEffect(() => () => {
+    if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+    if (downloadTimerRef.current !== null) window.clearTimeout(downloadTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    setLocalEdits({});
+    setIsEditing(false);
+    setEditError(null);
+  }, [submissionId, editContextKey]);
+
+  const copyToClipboard = async (text: string, key: string) => {
+    setCopyError(null);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = window.setTimeout(() => setCopiedKey(null), 1800);
+    } catch {
+      setCopyError('Clipboard access is unavailable. Select the text and copy it manually.');
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = window.setTimeout(() => setCopyError(null), 5000);
+    }
   };
 
   const triggerDownload = async (outputType: string, isZip = false) => {
@@ -187,19 +243,83 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
       anchor.click();
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      setDownloadNotice(`Download started: ${filename}`);
+      if (downloadTimerRef.current !== null) window.clearTimeout(downloadTimerRef.current);
+      downloadTimerRef.current = window.setTimeout(() => setDownloadNotice(null), 3000);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Download failed. Please try again.';
       setDownloadError(message);
-      setTimeout(() => setDownloadError(null), 5000);
+      setDownloadNotice(null);
+      if (downloadTimerRef.current !== null) window.clearTimeout(downloadTimerRef.current);
+      downloadTimerRef.current = window.setTimeout(() => setDownloadError(null), 5000);
     } finally {
       setDownloadingKey(null);
     }
   };
 
-  const activeOutputData = outputs[activeTab];
+  const hasLocalEdit = Object.prototype.hasOwnProperty.call(localEdits, activeTab);
+  const activeOutputData = outputs[activeTab]
+    ? { ...outputs[activeTab], ...(hasLocalEdit ? { content: localEdits[activeTab] } : {}) }
+    : undefined;
   const executiveSummaryText = String(activeOutputData?.content ?? '');
   const activeError = errors[activeTab];
   const isTabPending = isLoading && !activeOutputData && !activeError;
+
+  const beginEditing = () => {
+    if (!activeOutputData) return;
+    const content = activeOutputData.content;
+    setEditDraft(typeof content === 'string' ? content : JSON.stringify(content, null, 2));
+    setEditError(null);
+    setIsEditing(true);
+  };
+
+  const saveLocalEdit = () => {
+    const originalContent = outputs[activeTab]?.content;
+    if (typeof originalContent === 'string') {
+      setLocalEdits((previous) => ({ ...previous, [activeTab]: editDraft }));
+      setEditError(null);
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      const parsedContent: unknown = JSON.parse(editDraft);
+      setLocalEdits((previous) => ({ ...previous, [activeTab]: parsedContent }));
+      setEditError(null);
+      setIsEditing(false);
+    } catch {
+      setEditError('This structured output must remain valid JSON. Correct the syntax or cancel your changes.');
+    }
+  };
+
+  const regenerateActiveOutput = () => {
+    if (!canRegenerate || !onRegenerate || regeneratingOutput) return;
+    setIsEditing(false);
+    setEditError(null);
+    setLocalEdits((previous) => {
+      const next = { ...previous };
+      delete next[activeTab];
+      return next;
+    });
+    onRegenerate(activeTab);
+  };
+
+  if (allTabs.length === 0 && !isLoading) {
+    return (
+      <div className="mb-8 rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/55 px-5 py-8 text-center shadow-sm sm:px-8">
+        <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl border border-indigo-100 bg-white text-indigo-600 shadow-sm">
+          <Layers className="h-5 w-5" />
+        </div>
+        <h3 className="text-sm font-bold text-slate-900">Your deliverables will appear here</h3>
+        <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-slate-600">
+          Add a source and choose one or more output formats to create your first transformation.
+        </p>
+        <a href="#workspace" className="mt-4 inline-flex rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700">
+          Choose a source
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full bg-white rounded-2xl p-6 lg:p-7 shadow-lg border border-slate-200/90 mb-8 relative overflow-hidden animate-fade-in-up">
@@ -208,11 +328,26 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
 
       {/* Download error toast */}
       {downloadError && (
-        <div className="absolute top-4 right-4 z-10 flex items-start gap-2 bg-rose-50 border border-rose-300 text-rose-800 text-xs font-semibold px-3.5 py-2.5 rounded-xl shadow-lg max-w-xs">
+        <div role="alert" className="absolute top-4 right-4 z-10 flex max-w-xs items-start gap-2 rounded-xl border border-rose-300 bg-rose-50 px-3.5 py-2.5 text-xs font-semibold text-rose-800 shadow-lg">
           <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
           <span>{downloadError}</span>
         </div>
       )}
+      {copyError && (
+        <div role="alert" className="absolute top-4 right-4 z-10 flex max-w-xs items-start gap-2 rounded-xl border border-rose-300 bg-rose-50 px-3.5 py-2.5 text-xs font-semibold text-rose-800 shadow-lg">
+          <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
+          <span>{copyError}</span>
+        </div>
+      )}
+      {downloadNotice && !downloadError && (
+        <div role="status" className="absolute top-4 right-4 z-10 flex max-w-xs items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-800 shadow-lg">
+          <Check className="h-4 w-4 shrink-0 text-emerald-600" />
+          <span>{downloadNotice}</span>
+        </div>
+      )}
+      <span className="sr-only" aria-live="polite">
+        {copiedKey ? 'Content copied to clipboard.' : ''}
+      </span>
 
       {/* Header & Output Deliverable Tabs */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-6">
@@ -227,7 +362,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
         </div>
 
         {/* Tab Buttons with Brand Logos and Micro-interaction Hover */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Generated output formats">
           {allTabs.map((key) => {
             const isFailed = Boolean(errors[key]);
             const isDone = Boolean(outputs[key]);
@@ -243,7 +378,23 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
             return (
               <button
                 key={key}
+                id={`output-tab-${key}`}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`output-panel-${key}`}
+                tabIndex={isActive ? 0 : -1}
+                disabled={isEditing}
                 onClick={() => selectTab(key)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+                  event.preventDefault();
+                  const direction = event.key === 'ArrowRight' ? 1 : -1;
+                  const currentIndex = allTabs.indexOf(key);
+                  const nextTab = allTabs[(currentIndex + direction + allTabs.length) % allTabs.length];
+                  selectTab(nextTab);
+                  document.getElementById(`output-tab-${nextTab}`)?.focus();
+                }}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer interactive-hover ${
                   isActive
                     ? isFailed ? 'bg-rose-600 text-white shadow-md' : meta.activeClass
@@ -285,8 +436,23 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
       {/* Error state for this specific tab */}
       {activeError && (
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs animate-fade-in-up">
-          <p className="font-bold">Failed to generate {activeTab.replace('_', ' ')}:</p>
-          <p className="font-mono mt-1 text-rose-800">{activeError}</p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="font-bold">Failed to generate {activeTab.replace('_', ' ')}:</p>
+              <p className="mt-1 font-mono text-rose-800">{activeError}</p>
+            </div>
+            {onRegenerate && (
+              <button
+                type="button"
+                onClick={regenerateActiveOutput}
+                disabled={!canRegenerate || Boolean(regeneratingOutput)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 font-semibold text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {regeneratingOutput === activeTab ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                {regeneratingOutput === activeTab ? 'Retrying…' : 'Retry this format'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -312,7 +478,125 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
 
       {/* Render Active Output Content */}
       {activeOutputData && (
-        <div ref={outputSpotlightRef} key={activeTab} data-tab-direction={tabDirection} className="spotlight-card relative space-y-6 tab-content-transition">
+        <div
+          ref={outputSpotlightRef}
+          key={activeTab}
+          id={`output-panel-${activeTab}`}
+          data-tab-direction={tabDirection}
+          role={previewExpanded ? 'dialog' : 'tabpanel'}
+          tabIndex={0}
+          aria-modal={previewExpanded || undefined}
+          aria-label={previewExpanded ? `${BRAND_META[activeTab]?.label || activeTab} expanded preview` : undefined}
+          aria-labelledby={previewExpanded ? undefined : `output-tab-${activeTab}`}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && previewExpanded) {
+              event.stopPropagation();
+              setPreviewExpanded(false);
+              return;
+            }
+            if (event.key !== 'Tab' || !previewExpanded) return;
+            const focusable = event.currentTarget.querySelectorAll<HTMLElement>(
+              'button:not(:disabled), a[href], input:not(:disabled), [tabindex]:not([tabindex="-1"])'
+            );
+            if (!focusable.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          }}
+          className={`spotlight-card relative space-y-6 tab-content-transition${previewExpanded ? ' output-preview-expanded' : ''}`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {hasLocalEdit ? (
+              <p className="max-w-2xl text-[11px] leading-relaxed text-amber-800" role="status">
+                Edited in this session only. These changes are not saved to the backend; exports contain the last server-generated version.
+              </p>
+            ) : <span />}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {activeOutputData && (
+                isEditing ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditError(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      <X className="h-3.5 w-3.5" /> Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveLocalEdit}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                    >
+                      <Save className="h-3.5 w-3.5" /> Save local edit
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={beginEditing}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-800 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                  >
+                    <Pencil className="h-3.5 w-3.5" /> Edit content
+                  </button>
+                )
+              )}
+              {onRegenerate && (
+                <button
+                  type="button"
+                  onClick={regenerateActiveOutput}
+                  disabled={!canRegenerate || Boolean(regeneratingOutput) || isEditing}
+                  title={canRegenerate ? 'Regenerate this format using the saved analysis and current generation settings' : 'Complete analysis before regenerating'}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-800 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {regeneratingOutput === activeTab
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <RotateCcw className="h-3.5 w-3.5" />}
+                  {regeneratingOutput === activeTab ? 'Regenerating…' : 'Regenerate'}
+                </button>
+              )}
+            <button
+              type="button"
+              onClick={() => setPreviewExpanded((expanded) => !expanded)}
+              aria-label={previewExpanded ? 'Exit expanded output preview' : 'Expand output preview'}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:border-indigo-200 hover:text-indigo-700"
+            >
+              {previewExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+              {previewExpanded ? 'Exit expanded view' : 'Expand preview'}
+            </button>
+            </div>
+          </div>
+          {isEditing && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-4">
+              <label htmlFor="output-local-editor" className="mb-2 block text-xs font-bold text-violet-950">
+                Edit generated content
+                <span className="ml-2 font-normal text-violet-800">Changes stay in this browser session.</span>
+              </label>
+              <textarea
+                id="output-local-editor"
+                value={editDraft}
+                onChange={(event) => {
+                  setEditDraft(event.target.value);
+                  setEditError(null);
+                }}
+                rows={10}
+                spellCheck
+                className="w-full resize-y rounded-lg border border-violet-200 bg-white p-3 font-mono text-xs leading-relaxed text-slate-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              />
+              {editError && <p className="mt-2 text-xs font-semibold text-rose-700" role="alert">{editError}</p>}
+              <p className="mt-2 text-[10px] text-slate-600">
+                Structured formats use JSON so their slide, thread, or document fields remain intact. The saved server output and downloads are unchanged.
+              </p>
+            </div>
+          )}
           {/* 1. LINKEDIN POST */}
           {activeTab === 'linkedin_post' && (
             <div className="space-y-4">
@@ -901,7 +1185,7 @@ export default function OutputView({ outputs, errors, selectedOutputs = [], isLo
             </div>
 
             <span className="text-[11px] text-slate-400 italic">
-              Click any chunk tag to highlight its exact source text in the Traceability Panel below
+              Click any chunk tag to inspect its source passage in the Evidence Explorer below
             </span>
           </div>
         </div>

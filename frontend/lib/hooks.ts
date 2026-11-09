@@ -95,7 +95,7 @@ export function useMouseSpotlight<T extends HTMLElement = HTMLDivElement>(): Rea
 }
 
 export function useTilt<T extends HTMLElement = HTMLDivElement>(
-  maxAngle = 12,
+  maxAngle = 7,
 ): React.RefObject<T | null> {
   const ref = useRef<T>(null);
   const reducedMotion = useReducedMotion();
@@ -123,8 +123,8 @@ export function useTilt<T extends HTMLElement = HTMLDivElement>(
       const y = (pointerY - bounds.top) / bounds.height;
       element.style.setProperty("--tilt-x", `${(0.5 - y) * maxAngle}deg`);
       element.style.setProperty("--tilt-y", `${(x - 0.5) * maxAngle}deg`);
-      element.style.setProperty("--shadow-x", `${(x - 0.5) * -14}px`);
-      element.style.setProperty("--shadow-y", `${8 + y * 12}px`);
+      element.style.setProperty("--shadow-x", `${(x - 0.5) * -10}px`);
+      element.style.setProperty("--shadow-y", `${8 + y * 8}px`);
       frame = 0;
     };
 
@@ -202,8 +202,8 @@ export function useMagnetic<T extends HTMLButtonElement = HTMLButtonElement>(): 
       const bounds = element.getBoundingClientRect();
       const x = (pointerX - bounds.left) / bounds.width - 0.5;
       const y = (pointerY - bounds.top) / bounds.height - 0.5;
-      element.style.setProperty("--magnetic-x", `${x * 20}px`);
-      element.style.setProperty("--magnetic-y", `${y * 20}px`);
+      element.style.setProperty("--magnetic-x", `${x * 8}px`);
+      element.style.setProperty("--magnetic-y", `${y * 8}px`);
       frame = 0;
     };
     const handlePointerMove = (event: PointerEvent) => {

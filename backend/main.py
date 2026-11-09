@@ -88,7 +88,17 @@ class GenerateRequest(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "gemini_model": os.getenv("GEMINI_MODEL", "gemini-3.5-flash")}
+    try:
+        get_gemini_client()
+        gemini_configured = True
+    except ValueError:
+        gemini_configured = False
+
+    return {
+        "status": "ok",
+        "gemini_model": os.getenv("GEMINI_MODEL", "gemini-3.5-flash"),
+        "gemini_configured": gemini_configured,
+    }
 
 @app.post("/api/ingest")
 async def ingest_content(

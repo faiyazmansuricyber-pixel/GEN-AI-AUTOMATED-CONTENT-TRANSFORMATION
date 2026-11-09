@@ -20,7 +20,7 @@ Organization: **National Technical Research Organisation (NTRO) / NCIIPC**
 
 Organisations constantly need to turn one piece of source content — a report, an advisory, a threat intelligence brief, a policy document — into *many* different communication formats for different audiences. Doing that by hand is slow, inconsistent, and expensive.
 
-**Content Transformation Platform** is an AI-powered engine that takes a **single source** — text, a PDF/DOCX document, an image, or a video — and transforms it into **up to seven ready-to-use deliverables in parallel**, all generated from one shared understanding of the source, and all **traceable back to the exact source text** that backs every claim.
+**AI Content Intelligence Studio** takes a **single source** — text, a PDF/DOCX document, an image, or a video — and transforms it into **up to seven deliverables in parallel**. Its evidence explorer links claims to the source chunks returned by analysis; it does not claim sentence-level verification.
 
 > *"Transform once. Communicate many ways. Keep every generated claim traceable to the source."*
 
@@ -34,9 +34,10 @@ Organisations constantly need to turn one piece of source content — a report, 
 | 🧩 **7 parallel output formats** | LinkedIn Post · Twitter/X Thread · Advisory Doc · Executive Summary · Presentation Slides · Infographic Layout · Video Package |
 | 🎛️ **Full generation control** | Tone, Audience, Language, Detail Level, Objective, and Content Style — all operator-configurable |
 | 🌐 **22 Indian languages** | Every scheduled language of the Constitution of India, plus English |
-| 🔍 **Source-chunk traceability** | Every generated claim cites the exact source chunk it came from — click to inspect and verify |
+| 🔍 **Source-chunk traceability** | Inspect analysis claims, their returned chunk IDs, source passages, and literal entity mentions in one evidence explorer |
 | 🚫 **Anti-fabrication grounding** | Prompts explicitly forbid inventing names, numbers, or facts not present in the source |
-| 📊 **Structured intelligence analysis** | Auto-extracted summary, key claims, entities, domain, tone, and audience — with a grounding/trust score per output |
+| 📊 **Structured intelligence analysis** | Auto-extracted summary, key claims, entities, domain, tone, and audience, plus a visible source-chunk reference count |
+| ✍️ **Output studio** | Review format-specific previews, edit content locally for the current browser session, and regenerate one format through the existing API |
 | 📦 **Export & download** | Download any output as `.docx`/`.pptx`, or grab everything at once as a `.zip` |
 | 🛡️ **Resilient by design** | Multi-model fallback chain + jittered retries absorb rate limits and transient provider errors without failing the whole request |
 | 🕘 **Submission history** | Every run is persisted and can be reloaded from Past Submissions |
@@ -52,7 +53,7 @@ Organisations constantly need to turn one piece of source content — a report, 
 | **1 · Ingestion & Chunking** | Parses the source and splits it into chunks (`c1`, `c2`, …), preserving the original text of each chunk for later traceability. |
 | **2 · Intent & Context Analysis** | One Gemini call reads all chunks and extracts a summary, key claims, entities, domain, and suggested tone/audience. |
 | **3 · Parallel Per-Format Generation** | One concurrent Gemini call per selected output type — the shared analysis plus the operator's chosen parameters feed every format at once. |
-| **4 · Grounding & Verification** | Anti-fabrication checks and `claims_used` citation integrity — every claim can be clicked to trace back to its exact source chunk. |
+| **4 · Provenance Review** | Inspect `claims_used` and analysis claim chunk IDs in the evidence explorer. These are chunk-level references, not sentence-level fact verification. |
 | **5 · Persistence & Delivery** | Stored in SQLite, rendered natively per output type, and downloadable as `.docx` / `.pptx` / `.zip`. |
 
 ---

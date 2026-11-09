@@ -9,16 +9,28 @@ interface HeaderProps {
   onOpenHistory: () => void;
   onLoadDemo: () => void;
   backendStatus: boolean;
+  backendError: string | null;
   modelName: string;
 }
 
-export default function Header({ onOpenHistory, onLoadDemo, backendStatus, modelName }: HeaderProps) {
+export default function Header({ onOpenHistory, onLoadDemo, backendStatus, backendError, modelName }: HeaderProps) {
   const [activeSection, setActiveSection] = useState('workspace');
   const [isScrolled, setIsScrolled] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const activePillRef = useRef<HTMLSpanElement>(null);
   const scrollProgressRef = useRef<HTMLSpanElement>(null);
   const reducedMotion = useReducedMotion();
+  const isConnectionError = backendError?.startsWith('Could not reach ') ||
+    backendError === 'The backend health check timed out.';
+  let statusLabel = 'Checking API';
+  if (backendStatus) {
+    statusLabel = backendError ? 'Gemini Not Ready' : 'API Connected';
+  } else if (isConnectionError) {
+    statusLabel = 'API Offline';
+  } else if (backendError) {
+    statusLabel = 'API Error';
+  }
+
   useEffect(() => {
     const sectionIds = ['workspace', 'analysis', 'outputs', 'sources'];
     const sections = sectionIds
@@ -124,7 +136,7 @@ export default function Header({ onOpenHistory, onLoadDemo, backendStatus, model
   return (
     <header className={`header-aurora sticky top-0 z-40 w-full bg-white/85 backdrop-blur-xl border-b border-slate-200/80 px-4 lg:px-8 shadow-xs ${isScrolled ? 'header-scrolled py-2' : 'py-3.5'}`}>
       <span ref={scrollProgressRef} className="header-scroll-progress" aria-hidden="true" />
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-3 relative z-10">
         {/* Brand & Title */}
         <div className="flex items-center gap-3.5">
           {/* Logo Mark */}
@@ -147,14 +159,14 @@ export default function Header({ onOpenHistory, onLoadDemo, backendStatus, model
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg lg:text-xl font-extrabold tracking-tight text-slate-900">
-                Content Transformation Platform
+                AI Content Intelligence Studio
               </h1>
               <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full border border-indigo-200/80 shadow-xs">
                 SIH 2026 | PS 26154 | Team Cyphers
               </span>
             </div>
             <p className="text-xs text-slate-500 flex flex-wrap items-center gap-2 mt-0.5">
-              <span className="font-medium text-slate-600">Secure Multimodal Content Transformation</span>
+              <span className="font-medium text-slate-600">One source · intelligent analysis · seven deliverables</span>
               <span className="hidden md:inline-block w-1 h-1 rounded-full bg-slate-300" />
               <span className="inline-flex items-center gap-1 text-cyan-700 font-mono text-[11px] font-semibold bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
                 <Cpu className="h-3 w-3 text-cyan-600" /> {modelName}
@@ -186,18 +198,22 @@ export default function Header({ onOpenHistory, onLoadDemo, backendStatus, model
         {/* Actions & Status */}
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 shrink-0">
           {/* Backend Status Indicator */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs shadow-xs">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${backendStatus ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${backendStatus ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-            </span>
-            <span className={backendStatus ? 'text-emerald-700 font-semibold' : 'text-rose-700 font-semibold'}>
-              {backendStatus ? 'API Connected' : 'API Offline'}
+          <div
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs shadow-xs"
+            role="status"
+            aria-live="polite"
+            title={backendError || undefined}
+          >
+            <span className={`inline-flex h-2.5 w-2.5 rounded-full ${backendStatus && !backendError ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+            <span className={backendStatus && !backendError ? 'text-emerald-700 font-semibold' : 'text-rose-700 font-semibold'}>
+              {statusLabel}
             </span>
           </div>
 
           <button
             onClick={onLoadDemo}
+            type="button"
+            title="Load the saved demo result"
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 shadow-xs text-indigo-800 hover:text-indigo-950 text-xs font-semibold transition cursor-pointer"
           >
             <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
@@ -207,13 +223,21 @@ export default function Header({ onOpenHistory, onLoadDemo, backendStatus, model
           {/* History Button */}
           <button
             onClick={onOpenHistory}
+            type="button"
+            aria-haspopup="dialog"
+            title="Search and open past submissions"
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-300 shadow-xs text-slate-700 hover:text-indigo-900 text-xs font-semibold transition cursor-pointer"
           >
             <History className="h-3.5 w-3.5 text-indigo-600" />
-            <span>Past Submissions</span>
+            <span>History</span>
           </button>
         </div>
       </div>
+      {backendError && (
+        <p className="relative z-10 mx-auto mt-2 max-w-7xl rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-800" role="alert">
+          {backendError}
+        </p>
+      )}
       <div className="aurora-layer header-aurora-glow" aria-hidden="true" />
     </header>
   );

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Content Transformation Platform | SIH Prototype",
-  description: "Multi-Modal AI Deliverable Generator Powered by Google Gemini API",
+  title: "AI Content Intelligence Studio | Cyphers",
+  description: "Analyze source content, create seven deliverables, and inspect their source-chunk provenance.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

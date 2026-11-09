@@ -70,6 +70,11 @@ const STYLE_OPTIONS = [
   { value: 'analytical', label: 'Analytical' },
 ];
 
+const ACCEPTED_FILE_EXTENSIONS = new Set([
+  'pdf', 'docx', 'txt', 'md', 'csv', 'json', 'png', 'jpg', 'jpeg', 'webp',
+  'mp4', 'mov', 'avi', 'mkv', 'webm'
+]);
+
 const OUTPUT_OPTIONS = [
   { 
     id: 'linkedin_post', 
@@ -168,9 +173,7 @@ const OUTPUT_OPTIONS = [
 const STEPS = [
   { id: 1, name: 'Ingest', label: 'Ingesting Content' },
   { id: 2, name: 'Analyze', label: 'Extracting Intelligence' },
-  { id: 3, name: 'Generate', label: 'Generating Deliverables' },
-  { id: 4, name: 'Verify', label: 'Verifying Provenance' },
-  { id: 5, name: 'Deliver', label: 'Finalizing Deliverables' }
+  { id: 3, name: 'Generate', label: 'Generating Deliverables' }
 ];
 
 const LANGUAGES = [
@@ -257,6 +260,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
   const [activeTab, setActiveTab] = useState<'text' | 'file'>('text');
   const [inputText, setInputText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [selectedOutputs, setSelectedOutputs] = useState<string[]>([
     'linkedin_post', 'twitter_thread', 'advisory', 'presentation'
   ]);
@@ -336,12 +340,26 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
     setSelectedOutputs([]);
   };
 
+  const selectFile = (file: File | undefined) => {
+    if (!file) return;
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!ACCEPTED_FILE_EXTENSIONS.has(extension)) {
+      setFileError('That file type is not supported. Choose PDF, DOCX, TXT, MD, CSV, JSON, PNG, JPG, WEBP, MP4, MOV, AVI, MKV, or WEBM.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    setSelectedFile(file);
+    setFileError(null);
+  };
+
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files.length > 1) {
+      setFileError('Choose one file at a time.');
+      return;
     }
+    selectFile(e.dataTransfer.files[0]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -442,10 +460,22 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
             </div>
           )}
 
-          <div className="flex items-center gap-3 border-b border-slate-200 pb-3 mb-4">
+          <div className="flex items-center gap-3 border-b border-slate-200 pb-3 mb-4" role="tablist" aria-label="Source input method">
             <button
               type="button"
+              id="input-tab-text"
+              role="tab"
+              aria-selected={activeTab === 'text'}
+              aria-controls="input-panel-text"
+              tabIndex={activeTab === 'text' ? 0 : -1}
               onClick={() => setActiveTab('text')}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                  e.preventDefault();
+                  setActiveTab('file');
+                  document.getElementById('input-tab-file')?.focus();
+                }
+              }}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 activeTab === 'text'
                   ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
@@ -457,7 +487,19 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
             </button>
             <button
               type="button"
+              id="input-tab-file"
+              role="tab"
+              aria-selected={activeTab === 'file'}
+              aria-controls="input-panel-file"
+              tabIndex={activeTab === 'file' ? 0 : -1}
               onClick={() => setActiveTab('file')}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                  e.preventDefault();
+                  setActiveTab('text');
+                  document.getElementById('input-tab-text')?.focus();
+                }
+              }}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 activeTab === 'file'
                   ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
@@ -471,11 +513,12 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
 
           {/* Text Input Tab */}
           {activeTab === 'text' && (
-            <div>
+            <div id="input-panel-text" role="tabpanel" aria-labelledby="input-tab-text" tabIndex={0}>
               <div className="relative">
                 <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
+                  aria-label="Source content to transform"
                   placeholder="Paste your unstructured report, policy brief, research paper, transcript, or internal document here..."
                   rows={6}
                   className="w-full bg-slate-50/50 border border-slate-200 rounded-xl p-4 text-xs lg:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-xs transition leading-relaxed font-sans"
@@ -500,10 +543,27 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
           {/* File Upload Tab */}
           {activeTab === 'file' && (
             <div
+              id="input-panel-file"
+              role="tabpanel"
+              aria-labelledby="input-tab-file"
+              tabIndex={0}
+            >
+            <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragOver(false);
+              }}
               onDrop={handleFileDrop}
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (selectedFile || e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }}
+              role={selectedFile ? undefined : 'button'}
+              tabIndex={selectedFile ? -1 : 0}
+              aria-label={selectedFile ? undefined : 'Choose or drop a document or media file'}
+              aria-describedby={fileError ? 'file-upload-error' : selectedFile ? undefined : 'file-upload-help'}
               className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center ${
                 dragOver 
                   ? 'border-indigo-500 bg-indigo-50/60 ring-2 ring-indigo-200' 
@@ -515,9 +575,11 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
               <input
                 type="file"
                 ref={fileInputRef}
-                onChange={(e) => e.target.files?.[0] && setSelectedFile(e.target.files[0])}
-                accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.mp4,.mov,.avi"
+                onChange={(e) => selectFile(e.target.files?.[0])}
+                accept=".pdf,.docx,.txt,.md,.csv,.json,.png,.jpg,.jpeg,.webp,.mp4,.mov,.avi,.mkv,.webm"
                 className="hidden"
+                tabIndex={-1}
+                aria-hidden="true"
               />
 
               {selectedFile ? (
@@ -533,7 +595,23 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                   </div>
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fileInputRef.current?.click();
+                    }}
+                    className="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-indigo-700 transition hover:bg-indigo-50"
+                  >
+                    Replace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFile(null);
+                      setFileError(null);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    aria-label="Remove selected file"
                     className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
                     title="Remove file"
                   >
@@ -549,11 +627,19 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                     Click to browse or drag & drop files here
                   </p>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    Supported file formats: <span className="font-semibold text-slate-700">PDF, DOCX, PNG/JPG, MP4</span>
+                    <span id="file-upload-help">
+                      Supported: <span className="font-semibold text-slate-700">PDF, DOCX, TXT/MD/CSV/JSON, PNG/JPG/WEBP, MP4/MOV/AVI/MKV/WEBM</span>
+                    </span>
                   </p>
                 </>
               )}
             </div>
+            </div>
+          )}
+          {fileError && (
+            <p id="file-upload-error" className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-800" role="alert">
+              {fileError}
+            </p>
           )}
         </div>
 
@@ -627,6 +713,9 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
               </label>
               <button
                 type="button"
+                aria-label="Tone"
+                aria-expanded={openDropdown === 'tone'}
+                aria-controls={openDropdown === 'tone' ? 'parameter-options-tone' : undefined}
                 onClick={() => setOpenDropdown(prev => prev === 'tone' ? null : 'tone')}
                 className={`w-full bg-white border rounded-lg px-2.5 py-1.5 text-xs font-medium shadow-xs cursor-pointer flex items-center justify-between gap-1.5 transition-all text-left ${
                   openDropdown === 'tone'
@@ -642,7 +731,8 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
 
               {openDropdown === 'tone' && (
                 <div
-                  className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 p-1 animate-in fade-in slide-in-from-top-1 overflow-hidden min-w-[180px]"
+                  id="parameter-options-tone"
+                  className="dropdown-panel absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 p-1 animate-in fade-in slide-in-from-top-1 overflow-hidden min-w-[180px]"
                   style={{ animationDuration: '150ms' }}
                 >
                   <div className="space-y-0.5">
@@ -652,6 +742,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                         <button
                           key={opt.value}
                           type="button"
+                          aria-pressed={isActive}
                           onClick={() => handleSelectParam('tone', opt.value)}
                           className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-between gap-2 ${
                             isActive
@@ -678,6 +769,9 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
               </label>
               <button
                 type="button"
+                aria-label="Audience"
+                aria-expanded={openDropdown === 'audience'}
+                aria-controls={openDropdown === 'audience' ? 'parameter-options-audience' : undefined}
                 onClick={() => setOpenDropdown(prev => prev === 'audience' ? null : 'audience')}
                 className={`w-full bg-white border rounded-lg px-2.5 py-1.5 text-xs font-medium shadow-xs cursor-pointer flex items-center justify-between gap-1.5 transition-all text-left ${
                   openDropdown === 'audience'
@@ -693,7 +787,8 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
 
               {openDropdown === 'audience' && (
                 <div
-                  className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 p-1 animate-in fade-in slide-in-from-top-1 overflow-hidden min-w-[200px]"
+                  id="parameter-options-audience"
+                  className="dropdown-panel absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 p-1 animate-in fade-in slide-in-from-top-1 overflow-hidden min-w-[200px]"
                   style={{ animationDuration: '150ms' }}
                 >
                   <div className="space-y-0.5">
@@ -703,6 +798,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                         <button
                           key={opt.value}
                           type="button"
+                          aria-pressed={isActive}
                           onClick={() => handleSelectParam('audience', opt.value)}
                           className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-between gap-2 ${
                             isActive
@@ -730,6 +826,9 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
 
               <button
                 type="button"
+                aria-label="Language"
+                aria-expanded={openDropdown === 'language'}
+                aria-controls={openDropdown === 'language' ? 'parameter-options-language' : undefined}
                 onClick={() => setOpenDropdown(prev => prev === 'language' ? null : 'language')}
                 className={`w-full bg-white border rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-xs cursor-pointer flex items-center justify-between gap-1.5 transition-all text-left ${
                   openDropdown === 'language'
@@ -743,7 +842,8 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
 
               {openDropdown === 'language' && (
                 <div
-                  className="absolute z-50 left-0 md:left-auto md:right-0 lg:left-0 lg:right-auto mt-1.5 w-[min(380px,90vw)] bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 animate-in fade-in slide-in-from-top-1 overflow-hidden"
+                  id="parameter-options-language"
+                  className="dropdown-panel absolute z-50 left-0 md:left-auto md:right-0 lg:left-0 lg:right-auto mt-1.5 w-[min(380px,90vw)] bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 animate-in fade-in slide-in-from-top-1 overflow-hidden"
                   style={{ animationDuration: '150ms' }}
                 >
                   {/* Search */}
@@ -753,6 +853,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                       <input
                         ref={langSearchRef}
                         type="text"
+                        aria-label="Search languages"
                         value={langSearch}
                         onChange={(e) => setLangSearch(e.target.value)}
                         placeholder="Search languages…"
@@ -774,6 +875,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                           <button
                             key={lang.value}
                             type="button"
+                            aria-pressed={isActive}
                             onClick={() => handleSelectParam('language', lang.value)}
                             className={`text-left px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
                               isActive
@@ -809,6 +911,9 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
               </label>
               <button
                 type="button"
+                aria-label="Detail level"
+                aria-expanded={openDropdown === 'detail_level'}
+                aria-controls={openDropdown === 'detail_level' ? 'parameter-options-detail-level' : undefined}
                 onClick={() => setOpenDropdown(prev => prev === 'detail_level' ? null : 'detail_level')}
                 className={`w-full bg-white border rounded-lg px-2.5 py-1.5 text-xs font-medium shadow-xs cursor-pointer flex items-center justify-between gap-1.5 transition-all text-left ${
                   openDropdown === 'detail_level'
@@ -824,7 +929,8 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
 
               {openDropdown === 'detail_level' && (
                 <div
-                  className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 p-1 animate-in fade-in slide-in-from-top-1 overflow-hidden min-w-[180px]"
+                  id="parameter-options-detail-level"
+                  className="dropdown-panel absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 p-1 animate-in fade-in slide-in-from-top-1 overflow-hidden min-w-[180px]"
                   style={{ animationDuration: '150ms' }}
                 >
                   <div className="space-y-0.5">
@@ -834,6 +940,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                         <button
                           key={opt.value}
                           type="button"
+                          aria-pressed={isActive}
                           onClick={() => handleSelectParam('detail_level', opt.value)}
                           className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-between gap-2 ${
                             isActive
@@ -860,6 +967,9 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
               </label>
               <button
                 type="button"
+                aria-label="Objective"
+                aria-expanded={openDropdown === 'objective'}
+                aria-controls={openDropdown === 'objective' ? 'parameter-options-objective' : undefined}
                 onClick={() => setOpenDropdown(prev => prev === 'objective' ? null : 'objective')}
                 className={`w-full bg-white border rounded-lg px-2.5 py-1.5 text-xs font-medium shadow-xs cursor-pointer flex items-center justify-between gap-1.5 transition-all text-left ${
                   openDropdown === 'objective'
@@ -875,7 +985,8 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
 
               {openDropdown === 'objective' && (
                 <div
-                  className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 p-1 animate-in fade-in slide-in-from-top-1 overflow-hidden min-w-[180px]"
+                  id="parameter-options-objective"
+                  className="dropdown-panel absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 p-1 animate-in fade-in slide-in-from-top-1 overflow-hidden min-w-[180px]"
                   style={{ animationDuration: '150ms' }}
                 >
                   <div className="space-y-0.5">
@@ -885,6 +996,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                         <button
                           key={opt.value}
                           type="button"
+                          aria-pressed={isActive}
                           onClick={() => handleSelectParam('objective', opt.value)}
                           className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-between gap-2 ${
                             isActive
@@ -911,6 +1023,9 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
               </label>
               <button
                 type="button"
+                aria-label="Content style"
+                aria-expanded={openDropdown === 'style'}
+                aria-controls={openDropdown === 'style' ? 'parameter-options-style' : undefined}
                 onClick={() => setOpenDropdown(prev => prev === 'style' ? null : 'style')}
                 className={`w-full bg-white border rounded-lg px-2.5 py-1.5 text-xs font-medium shadow-xs cursor-pointer flex items-center justify-between gap-1.5 transition-all text-left ${
                   openDropdown === 'style'
@@ -926,7 +1041,8 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
 
               {openDropdown === 'style' && (
                 <div
-                  className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 p-1 animate-in fade-in slide-in-from-top-1 overflow-hidden min-w-[180px]"
+                  id="parameter-options-style"
+                  className="dropdown-panel absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/70 p-1 animate-in fade-in slide-in-from-top-1 overflow-hidden min-w-[180px]"
                   style={{ animationDuration: '150ms' }}
                 >
                   <div className="space-y-0.5">
@@ -936,6 +1052,7 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                         <button
                           key={opt.value}
                           type="button"
+                          aria-pressed={isActive}
                           onClick={() => handleSelectParam('style', opt.value)}
                           className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-between gap-2 ${
                             isActive
@@ -967,12 +1084,12 @@ export default function IngestionPanel({ onSubmit, isLoading, loadingStep }: Ing
                   <span>{loadingStep || 'Processing Content Transformation...'}</span>
                 </span>
                 <span className="text-[11px] font-mono font-semibold text-indigo-600 bg-indigo-100/70 px-2 py-0.5 rounded border border-indigo-200">
-                  Step {activeStepIdx || 1} of 5
+                  Step {activeStepIdx || 1} of {STEPS.length}
                 </span>
               </div>
 
               {/* 5-Step Timeline Bar */}
-              <div className="grid grid-cols-5 gap-2 pt-1">
+              <div className="grid grid-cols-3 gap-2 pt-1">
                 {STEPS.map((s) => {
                   const isDone = s.id < activeStepIdx;
                   const isCurrent = s.id === activeStepIdx;

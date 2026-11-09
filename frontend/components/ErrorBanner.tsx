@@ -25,8 +25,8 @@ export default function ErrorBanner({ error, onDismiss }: ErrorBannerProps) {
             {error.message}
           </p>
           <div className="mt-2 text-[11px] text-rose-700 flex items-center gap-1.5 font-semibold">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin text-rose-600" />
-            <span>Verify your inputs or backend service connection before retrying.</span>
+            <RefreshCw className="h-3.5 w-3.5 text-rose-600" />
+            <span>Check your source or API connection before trying again.</span>
           </div>
         </div>
       </div>
@@ -41,4 +41,3 @@ export default function ErrorBanner({ error, onDismiss }: ErrorBannerProps) {
     </div>
   );
 }
-

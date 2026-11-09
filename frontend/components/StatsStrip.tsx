@@ -3,12 +3,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Database, FileText, Layers, Cpu } from 'lucide-react';
 import { useCountUp, useMouseSpotlight, useTilt } from '@/lib/hooks';
+import { API_BASE } from '@/lib/api';
 
 interface StatsStripProps {
   refreshTrigger?: number;
 }
-
-const API_BASE = "http://127.0.0.1:8000/api";
 
 function StatCard({
   icon: Icon,

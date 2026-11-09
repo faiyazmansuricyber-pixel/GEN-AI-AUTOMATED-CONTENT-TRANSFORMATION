@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { useCountUp, useInView, useReducedMotion } from '@/lib/hooks';
 import { Brain, Tag, Layers, CheckCircle2, Globe, MessageSquare, Users, Sparkles, ShieldCheck, PieChart as PieChartIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { useCountUp, useInView, useReducedMotion } from '@/lib/hooks';
 
 export interface AnalysisData {
   summary: string;
@@ -175,10 +175,31 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
     );
   }
 
-  if (!analysis) return null;
+  if (!analysis) {
+    return (
+      <section className="mb-8 rounded-2xl border border-dashed border-violet-200 bg-[linear-gradient(120deg,#f6f2ff,#f7fbff_65%,#fff8f1)] px-6 py-8 shadow-sm">
+        <div className="mx-auto max-w-lg text-center">
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-violet-200 bg-white text-violet-700 shadow-sm">
+            <Brain className="h-5 w-5" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-900">Intelligence appears after source analysis</h3>
+          <p className="mt-1 text-xs leading-relaxed text-slate-600">
+            Submit a source to the backend to extract its synthesis, claims, entities, and suggested audience. Nothing is fabricated for this empty state.
+          </p>
+          <a
+            href="#workspace"
+            className="mt-4 inline-flex rounded-lg bg-violet-700 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+          >
+            Add a source
+          </a>
+        </div>
+      </section>
+    );
+  }
 
   // Extract stats
   const totalClaims = analysis.key_claims?.length || 0;
+  const sourcedClaims = analysis.key_claims?.filter((claim) => claim.source_chunk_ids?.length > 0).length || 0;
   const totalEntities = analysis.entities?.length || 0;
   const uniqueChunks = Array.from(
     new Set(analysis.key_claims?.flatMap(c => c.source_chunk_ids || []) || [])
@@ -188,7 +209,7 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
   const categoriesPresent = Array.from(new Set(categorizedEntities.map(e => e.category)));
 
   return (
-    <div className="analysis-intelligence-view w-full bg-white rounded-2xl p-6 lg:p-7 shadow-lg mb-8 border border-purple-200/80 relative overflow-hidden animate-fade-in-up">
+    <div className="w-full bg-white rounded-2xl p-6 lg:p-7 shadow-lg mb-8 border border-purple-200/80 relative overflow-hidden animate-fade-in-up">
       {/* Top accent line */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500" />
 
@@ -265,8 +286,8 @@ export default function AnalysisView({ analysis, isLoading, onChunkClick }: Anal
             <ShieldCheck className="h-4 w-4" />
           </div>
           <div>
-            <AnimatedMetric value={100} suffix="%" />
-            <div className="text-[11px] text-slate-500 font-semibold mt-0.5">Provenance Verified</div>
+            <AnimatedMetric value={sourcedClaims} suffix={`/${totalClaims}`} />
+            <div className="text-[11px] text-slate-500 font-semibold mt-0.5">Claims linked to sources</div>
           </div>
         </div>
       </div>
